@@ -173,15 +173,15 @@ recvUntil sock n
 data Response = LevelResponse Level
               | LoadingResponse Int
 
-responseObject :: J.ToJSON a => String -> a -> J.Value 
-responseObject msgType payload = J.object
+responseObject :: (a -> J.Value) -> String -> a -> J.Value 
+responseObject encoder msgType payload = J.object
         [ (T.pack "type", J.toJSON msgType)
-        , (T.pack "payload", J.toJSON payload)
+        , (T.pack "payload", encoder payload)
         ]
 
 instance J.ToJSON Response where
-  toJSON (LevelResponse lev) = responseObject "level" lev
-  toJSON (LoadingResponse n) = responseObject "loading" n
+  toJSON (LevelResponse lev) = responseObject (levelToJSON (const (J.toJSON ""))) "level" lev
+  toJSON (LoadingResponse n) = responseObject J.toJSON "loading" n
 
 -- | Data we receive from the client.
 data Request = RequestAct Action deriving Show

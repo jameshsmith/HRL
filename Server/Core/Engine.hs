@@ -23,6 +23,7 @@ module Core.Engine
     , runEffects
     , cast
     , defaultLevel
+    , levelToJSON
     ) where
 
 import Prelude hiding ((.), id)
@@ -252,32 +253,30 @@ arrayToJSON toChar arr@(bounds -> (_, (mr, mc))) = J.Array $ V.generate (mr + 1)
   where
     textRow r = J.String . T.pack $ map (toChar . (!) arr . (,) r) [0..mc]
 
-instance J.ToJSON Actor where
-  toJSON actor = J.object
-      [ (T.pack "row", J.toJSON . fst $ _eloc actor)
-      , (T.pack "col", J.toJSON . snd $ _eloc actor)
-      , (T.pack "chr", if _status actor == Dead then J.toJSON 'c' else J.toJSON (_achar actor))
-      , (T.pack "status", J.toJSON (show (_status actor)))
-      ]
+actorToJSON entityToJSON actor = J.object
+  [ (T.pack "row", J.toJSON . fst $ _eloc actor)
+  , (T.pack "col", J.toJSON . snd $ _eloc actor)
+  , (T.pack "chr", if _status actor == Dead then J.toJSON 'c' else J.toJSON (_achar actor))
+  , (T.pack "status", J.toJSON (show (_status actor)))
+  , (T.pack "entity", entityToJSON (_aentity actor))
+  ]
 
-actorsToJSON :: IntMap Actor -> J.Value
-actorsToJSON = J.object . IMap.foldrWithKey f []
+actorsToJSON :: (Entity -> J.Value) -> IntMap Actor -> J.Value
+actorsToJSON entityToJSON = J.object . IMap.foldrWithKey f []
   where
-    f k v acc = (T.pack ('a' : show k), J.toJSON v) : acc
+    f k v acc = (T.pack ('a' : show k), actorToJSON entityToJSON v) : acc
 
-levelToJSON :: Level -> J.Value
-levelToJSON lev = J.object
+levelToJSON :: (Entity -> J.Value) -> Level -> J.Value
+levelToJSON entityToJSON lev = J.object
     [ (T.pack "rows", J.toJSON . succ . fst . snd . bounds $ _statics lev)
     , (T.pack "cols", J.toJSON . succ . snd . snd . bounds $ _statics lev)
     , (T.pack "statics", arrayToJSON fst (_statics lev))
     , (T.pack "visible", arrayToJSON boolChar (_visible lev))
     , (T.pack "seen", arrayToJSON boolChar (_seen lev))
-    , (T.pack "actors", actorsToJSON (_actors lev))
+    , (T.pack "actors", actorsToJSON entityToJSON (_actors lev))
     , (T.pack "messages", J.toJSON (_messageLog lev))
     ]
   where
     boolChar True = '#'
     boolChar False = ' '
 
-instance J.ToJSON Level where
-  toJSON = levelToJSON

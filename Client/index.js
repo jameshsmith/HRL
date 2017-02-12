@@ -58,6 +58,7 @@ function chrActorMesh (chr) {
 	mesh = new THREE.Mesh(geoActor, zombieMat)
     } else {
 	mesh = new THREE.Mesh(geoActor, corpseMat)
+	mesh.position.y -= 1
     }
 	
     mesh.rotation.x = camera.rotation.x
