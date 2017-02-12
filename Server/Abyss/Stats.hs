@@ -197,7 +197,7 @@ instance Monoid Stats where
 
   mappend = mergeStats (+)
 
-newtype Hurt = Hurt Int deriving (Eq, Ord, Num)
+newtype Hurt = Hurt { hurt :: Int } deriving (Eq, Ord, Num)
 
 instance ECS.Component Hurt where
   stock = Hurt 0

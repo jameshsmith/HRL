@@ -4,9 +4,12 @@ module Main where
 import Prelude hiding ((.), id)
 
 import Abyss.Game
+import Abyss.Stats
 import Core.Types
 import Core.Monad
 import Core.Engine
+import qualified Core.ECS as ECS
+import Component.Modifier (selfModify)
 import Server.Save
 
 import Control.Monad
@@ -175,12 +178,18 @@ data Response = LevelResponse Level
 
 responseObject :: (a -> J.Value) -> String -> a -> J.Value 
 responseObject encoder msgType payload = J.object
-        [ (T.pack "type", J.toJSON msgType)
-        , (T.pack "payload", encoder payload)
-        ]
+    [ (T.pack "type", J.toJSON msgType)
+    , (T.pack "payload", encoder payload)
+    ]
+
+entityHpJSON :: ECS.Entity -> J.Value
+entityHpJSON (selfModify -> ent) = J.object
+    [ (T.pack "hurt", J.toJSON (hurt (getL ECS.lens ent)))
+    , (T.pack "hp", J.toJSON (getL (baseHP . ECS.lens) ent))
+    ]
 
 instance J.ToJSON Response where
-  toJSON (LevelResponse lev) = responseObject (levelToJSON (const (J.toJSON ""))) "level" lev
+  toJSON (LevelResponse lev) = responseObject (levelToJSON entityHpJSON) "level" lev
   toJSON (LoadingResponse n) = responseObject J.toJSON "loading" n
 
 -- | Data we receive from the client.

@@ -130,7 +130,8 @@ function updateMsg (message) {
 }
 
 function updateLevel (message) {
-
+    // console.log(message)
+    
     // Update statics
     for (var r = 0; r < 41; r++) {
 	for (var c = 0; c < 41; c++) {

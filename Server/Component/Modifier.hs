@@ -3,6 +3,7 @@ module Component.Modifier
     , addModifier
     , addRawModifier
     , removeModifier
+    , selfModify
     , modified
     ) where
 
@@ -36,6 +37,12 @@ addModifier m ref = do
 removeModifier :: MRef -> Game k Level ()
 removeModifier (MRef ref n) = do
     actor ref %= (\(Mods ms) -> Mods $ IMap.delete n ms)
+
+selfModify :: ECS.Entity -> ECS.Entity
+selfModify ent =
+    IMap.foldr ($) ent ms
+  where
+    (Mods ms) = getL ECS.component ent
 
 modified :: ECS.Component s => ARef -> Game k Level s
 modified ref = do
