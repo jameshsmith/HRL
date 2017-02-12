@@ -51,10 +51,9 @@ shamble self = do
     willMove <- coin
     when willMove $ do
         pos <- access (loc <# aref self)
-        dirMove <- downhill pos <$> access playerDMap
-        case dirMove of
-            [] -> return ()
-            ds -> monMove pos self ds
+        moves <- downhill pos <$> access playerDMap
+        d <- pick N4 [E4, S4, W4]
+        monMove pos self (moves ++ [d])
 
 monMove :: (Row, Col) -> ARef -> [Dir4] -> Game () Level ()
 monMove _   _    []     = return ()
@@ -136,7 +135,7 @@ initGame = do
 
     modifyLevel shadowCast
     
-    forM [1..3] $ \_ -> void $ spawn freeSpot ('Z', zombie)
+    forM [1..50] $ \_ -> void $ spawn freeSpot ('Z', zombie)
 
     let doors = filter ((== '+') . snd) (assocs layout)
 

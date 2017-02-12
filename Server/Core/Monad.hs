@@ -7,13 +7,14 @@ module Core.Monad
     , Result (..)
     -- * Dice and random numbers
     , roll, coin, d4, d6, d8, d10, d12, d20, d24, d30, d100
-    , Dice (Roll), dice
+    , Dice (Roll), dice, pick
     -- * Other suspensions
     , yesNo, turn, uniqueInt
     , generate
     , noTurn, rollMax, rollMin
     -- * State functions
-    , (!=), (!!=), (%=), (%%=), (~=), (~~=), (#=), (##=), access, with, rd, level, modifyLevel
+    , (!=), (!!=), (%=), (%%=), (~=), (~~=), (#=), (##=)
+    , access, with, rd, level, modifyLevel
     ) where
 
 import Core.Types
@@ -266,3 +267,6 @@ with l f = f =<< access l
 -- | Read part of the state using an accessor function.
 rd :: (l -> a) -> Game k l a
 rd f = f <$> (liftState . Lens.access) id
+
+pick :: a -> [a] -> Game k l a
+pick x xs@(length -> l) = ((x:xs) !!) <$> roll (0, l)
