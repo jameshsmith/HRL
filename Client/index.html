@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="index.css">
+    <script type="text/javascript" src="three.min.js"></script>
+    <script type="text/javascript" src="index.js"></script>
+    <title>Abyss Aeternum</title>
+  </head>
+  <body onload="start()" onkeydown="keyPress(event)">
+    Testing...
+    <div class="window" id="inventory">
+      <div class="titlebar" onmousedown="tbMoveStart(event)" onmouseup="tbMoveEnd(event)">
+	<img class="tbleft" src="ui/tbleft.png">
+	Inventory
+	<img class="tbright" src="ui/tbright.png">
+      </div>
+    </div>
+    <div class="window" id="messagebox">
+      <div class="titlebar" onmousedown="tbMoveStart(event)" onmouseup="tbMoveEnd(event)">
+	<img class="tbleft" src="ui/tbleft.png">
+	Messages
+	<img class="tbright" src="ui/tbright.png">
+      </div>
+      <div id="messages">
+      </div>
+    </div>
+  </body>
+</html>
