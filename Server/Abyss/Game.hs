@@ -135,7 +135,7 @@ initGame = do
 
     modifyLevel shadowCast
     
-    forM [1..50] $ \_ -> void $ spawn freeSpot ('Z', zombie)
+    forM [1..10] $ \_ -> void $ spawn freeSpot ('Z', zombie)
 
     let doors = filter ((== '+') . snd) (assocs layout)
 
@@ -159,7 +159,12 @@ game = do
 
     refs <- monsters <$> level
 
-    mapM_ runAI refs
+    forM_ refs $ \ref -> do
+        (Hurt amount) <- modified ref
+        hp <- getL baseHP <$> modified ref
+        if (hp - amount) <= 0
+            then aref ref %= kill >> message "Something died!"
+            else runAI ref
       
     game
 

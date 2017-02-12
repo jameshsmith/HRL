@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, MultiWayIf #-}
+{-# LANGUAGE TypeOperators, MultiWayIf, GeneralizedNewtypeDeriving #-}
 module Abyss.Stats where
 
 import Prelude hiding ((.), id)
@@ -108,7 +108,10 @@ attack :: Stats :-> Int
 attack = lens _attack (\v s -> s { _attack = v })
 
 defense :: Stats :-> Int
-defense = lens _defense (\v s -> s { _defense = v})
+defense = lens _defense (\v s -> s { _defense = v })
+
+baseHP :: Stats :-> Int
+baseHP = lens _baseHP (\v s -> s { _baseHP = v })
 
 defaultStats :: Stats
 defaultStats = Stats attr attr attr attr attr 0 10 Map.empty Map.empty 10 10 [(Roll 1 d6, Bashing)]
@@ -159,10 +162,12 @@ meleeAttack attacker defender = do
       Fail     -> return ()
       Pass     -> do
           dam <- rollDamage astats dstats
+          actor defender %= (+ Hurt (sum (map fst dam)))
           message ("did " ++ intercalate ", " (map prettyDam dam))
 
       Critical -> do
           dam <- rollMax (rollDamage astats dstats)
+          actor defender %= (+ Hurt (sum (map fst dam)))
           message ("did " ++ intercalate ", " (map prettyDam dam) ++ "!")
   where
     prettyDam (n, d) = show n ++ " " ++ prettyDType d
@@ -191,3 +196,8 @@ instance Monoid Stats where
       attr = (0, Top)
 
   mappend = mergeStats (+)
+
+newtype Hurt = Hurt Int deriving (Eq, Ord, Num)
+
+instance ECS.Component Hurt where
+  stock = Hurt 0

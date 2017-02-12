@@ -256,7 +256,7 @@ instance J.ToJSON Actor where
   toJSON actor = J.object
       [ (T.pack "row", J.toJSON . fst $ _eloc actor)
       , (T.pack "col", J.toJSON . snd $ _eloc actor)
-      , (T.pack "chr", J.toJSON (_achar actor))
+      , (T.pack "chr", if _status actor == Dead then J.toJSON 'c' else J.toJSON (_achar actor))
       , (T.pack "status", J.toJSON (show (_status actor)))
       ]
 

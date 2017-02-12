@@ -57,7 +57,7 @@ function chrActorMesh (chr) {
     } else if (chr === 'Z') {
 	mesh = new THREE.Mesh(geoActor, zombieMat)
     } else {
-	mesh = new THREE.Mesh(geoActor, fighterMat)
+	mesh = new THREE.Mesh(geoActor, corpseMat)
     }
 	
     mesh.rotation.x = camera.rotation.x
@@ -175,7 +175,9 @@ function updateLevel (message) {
 
 	if (meshA === undefined || meshA.userData.chr !== act.chr) {
 	    console.log('(re)initializing actor: ' + key)
-	    
+	    if (meshA !== undefined) {
+		levelGroup.remove(meshA)
+	    }
 	    meshA = chrActorMesh(act.chr)
 	    levelActor[key] = meshA
 	    levelGroup.add(meshA)
@@ -328,6 +330,9 @@ function init() {
     texSelect = textureLoader.load('textures/ui/select.png')
     texSelect.magFilter = THREE.NearestFilter
     texSelect.minFilter = THREE.NearestFilter
+    texCorpse = textureLoader.load('textures/actor/corpse.png')
+    texCorpse.magFilter = THREE.NearestFilter
+    texCorpse.minFilter = THREE.NearestFilter
     
     var files = fs.readdirSync('textures/static/')
     for (var i in files) {
@@ -401,6 +406,7 @@ function init() {
     fighterMat = new THREE.MeshBasicMaterial({map: texFighter, transparent: true})
     zombieMat = new THREE.MeshBasicMaterial({map: texZombie, transparent: true})
     selectMat = new THREE.MeshBasicMaterial({map: texSelect, transparent: true})
+    corpseMat = new THREE.MeshBasicMaterial({map: texCorpse, transparent: true})
     
     geometry = new THREE.BoxGeometry(64, 64, 64)
 
