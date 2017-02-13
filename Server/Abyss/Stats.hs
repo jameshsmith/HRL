@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, MultiWayIf, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings, TypeOperators, MultiWayIf, GeneralizedNewtypeDeriving #-}
 module Abyss.Stats where
 
 import Prelude hiding ((.), id)
@@ -11,10 +11,12 @@ import Component.Name
 import Component.Modifier
 
 import Control.Monad
-import Data.Char (toLower)
-import Data.List (intercalate)
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.Monoid ((<>))
+
+import Data.Text (Text)
+import qualified Data.Text as T
 
 data DamageType =
     Slashing
@@ -28,11 +30,6 @@ data DamageType =
   | Necrotic
   | Radiant
   deriving (Eq, Ord, Show)
-
-prettyDType :: DamageType -> String
-prettyDType d
-  | (x:xs) <- show d = toLower x : xs
-  | otherwise = error "impossible damage type"
     
 -- | The 'Stats' record contains all the information on a characters
 -- attributes and abilities.
@@ -44,7 +41,7 @@ data Stats = Stats
     , _pow :: (Int, Topped Int)
     , _attack :: Int
     , _defense :: Int
-    , _skills :: Map String Int
+    , _skills :: Map Text Int
     , _resists :: Map DamageType Int
     , _baseHP :: Int
     , _baseMana :: Int
@@ -153,9 +150,11 @@ meleeAttack attacker defender = do
     (Name aName) <- modified attacker
     (Name dName) <- modified defender
     
-    message (concat [ aName, " attacks ", dName
-                    , " (roll:", show n, " DC:", show dc, " *", show res, "*)"
-                    ])
+    message (T.concat [ aName, " attacks ", dName
+                      , " (roll:", T.pack (show n)
+                      , " DC:", T.pack (show dc)
+                      , " *", T.pack (show res), "*)"
+                      ])
     
     case res of
       Botch    -> return ()  -- TODO: Think of something mean
@@ -163,14 +162,14 @@ meleeAttack attacker defender = do
       Pass     -> do
           dam <- rollDamage astats dstats
           actor defender %= (+ Hurt (sum (map fst dam)))
-          message ("did " ++ intercalate ", " (map prettyDam dam))
+          message ("did " <> T.intercalate ", " (map prettyDam dam))
 
       Critical -> do
           dam <- rollMax (rollDamage astats dstats)
           actor defender %= (+ Hurt (sum (map fst dam)))
-          message ("did " ++ intercalate ", " (map prettyDam dam) ++ "!")
+          message ("did " <> T.intercalate ", " (map prettyDam dam) <> "!")
   where
-    prettyDam (n, d) = show n ++ " " ++ prettyDType d
+    prettyDam (n, d) = T.pack (show n) <> " " <> T.toLower (T.pack (show d))
     
 mergeStats :: (Int -> Int -> Int) -> Stats -> Stats -> Stats
 mergeStats f s1 s2 = Stats

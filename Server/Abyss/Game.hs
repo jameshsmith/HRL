@@ -1,10 +1,10 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings, LambdaCase #-}
 module Abyss.Game (initGame, Action (..)) where
 
 import Prelude hiding ((.), id)
 
 import Abyss.Stats
-import qualified Abyss.Spell as Spell
+import qualified Abyss.Content.Spell as Spell
 import Core.Types
 import Core.Engine
 import Core.Monad
@@ -24,7 +24,9 @@ import Data.Maybe (listToMaybe)
 import qualified Data.Serialize as S
 import Data.Aeson ((.:))
 import qualified Data.Aeson as J
-import qualified Data.Text as T
+import Data.Text (Text)
+import qualified Data.ByteString as BS
+import qualified Data.Text.Encoding as T
 
 bump :: ARef -> Dir4 -> Game k Level ()
 bump self dir = do
@@ -69,44 +71,52 @@ monMove pos self (d:ds) = do
 data Action = Move Dir4
             | Skip
             | Activate Dir4
-            | Cast String (Row, Col)
+            | Cast Text (Row, Col)
             deriving Show
 
-parseDir4 :: MonadPlus m => String -> m Dir4
+parseDir4 :: MonadPlus m => Text -> m Dir4
 parseDir4 "N" = pure N4
 parseDir4 "E" = pure E4
 parseDir4 "S" = pure S4
 parseDir4 "W" = pure W4
 parseDir4 _ = mzero
 
-parseSkip :: MonadPlus m => T.Text -> m Action
+parseSkip :: MonadPlus m => Text -> m Action
 parseSkip t
-  | t == T.pack "skip" = return Skip
+  | t == "skip" = return Skip
   | otherwise = mzero
 
 instance J.FromJSON Action where
   parseJSON v = msum
-      [ J.withObject "move" (\obj -> fmap Move (parseDir4 =<< obj .: T.pack "move")) v
+      [ J.withObject "move" (\obj -> fmap Move (parseDir4 =<< obj .: "move")) v
       , J.withText "skip" parseSkip v
-      , J.withObject "activate" (\obj -> fmap Activate (parseDir4 =<< obj .: T.pack "activate")) v
+      , J.withObject "activate" (\obj -> fmap Activate (parseDir4 =<< obj .: "activate")) v
       , flip (J.withObject "cast") v $ \obj -> do
-          n <- obj .: T.pack "name"
-          r <- obj .: T.pack "row"
-          c <- obj .: T.pack "col"
+          n <- obj .: "name"
+          r <- obj .: "row"
+          c <- obj .: "col"
           return (Cast n (r, c))
       ]
+
+putText :: S.Putter Text
+putText txt = S.put (BS.length bs) >> S.putByteString bs
+  where
+    bs = T.encodeUtf8 txt
+
+getText :: S.Get Text
+getText = fmap T.decodeUtf8 (S.getByteString =<< S.get)
 
 instance S.Serialize Action where
   put (Move d)     = S.putWord8 0x00 >> S.put d
   put Skip         = S.putWord8 0x01
   put (Activate d) = S.putWord8 0x02 >> S.put d
-  put (Cast s l)   = S.putWord8 0x03 >> S.put s >> S.put l 
+  put (Cast s l)   = S.putWord8 0x03 >> putText s >> S.put l 
 
   get = S.getWord8 >>= \case
       0x00 -> Move <$> S.get
       0x01 -> return Skip
       0x02 -> Activate <$> S.get
-      0x03 -> Cast <$> S.get <*> S.get
+      0x03 -> Cast <$> getText <*> S.get
       _    -> error "Invalid action!"
 
 rooms :: [(Int, Int)]
@@ -135,7 +145,7 @@ initGame = do
 
     modifyLevel shadowCast
     
-    forM [1..10] $ \_ -> void $ spawn freeSpot ('Z', zombie)
+    forM [1..10] $ \_ -> void $ spawn freeSpot (Egg 'Z' White zombie)
 
     let doors = filter ((== '+') . snd) (assocs layout)
 
@@ -163,7 +173,7 @@ game = do
         (Hurt amount) <- modified ref
         hp <- getL baseHP <$> modified ref
         if (hp - amount) <= 0
-            then aref ref %= kill >> message "Something died!"
+            then aref ref %= kill
             else runAI ref
       
     game
@@ -179,9 +189,9 @@ handleAct (Activate dir) = do
 
 handleAct (Cast sname l) =
     case Map.findWithDefault Spell.fizzle sname Spell.every of
-        TargetNone eff -> cast eff
-        TargetLocation eff -> cast (eff l)
-        TargetActor eff -> do
+        TargetNone _ eff -> cast eff
+        TargetLocation _ eff -> cast (eff l)
+        TargetActor _ eff -> do
             occupier <- listToMaybe . living (\a -> a ^. loc == l) <$> level
             case occupier of
                 Just mon -> cast (eff mon)

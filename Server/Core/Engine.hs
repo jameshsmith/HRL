@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections, TypeOperators, ViewPatterns #-}
+{-# LANGUAGE TupleSections, TypeOperators, ViewPatterns, OverloadedStrings #-}
 module Core.Engine
     ( ARef
     , Level
@@ -7,7 +7,7 @@ module Core.Engine
     , Spell (..)
     , Effect (..)
     , hidden, alive, dead, kill, resurrect
-    , spawn
+    , spawn, Egg (..)
     , player
     , loc
     , aref
@@ -21,6 +21,7 @@ module Core.Engine
     , statics, static, staticChar
     , message, messageLog, clearMessages
     , runEffects
+    , spellName
     , cast
     , defaultLevel
     , levelToJSON
@@ -43,6 +44,7 @@ import Data.IntMap (IntMap)
 import qualified Data.IntMap as IMap
 
 import qualified Data.Aeson as J
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Vector as V
 
@@ -56,30 +58,33 @@ data Level = Level
     , _seen       :: !(UArray (Row, Col) Bool)
     , _solid      :: UArray (Row, Col) Bool
     , _player     :: Int
-    , _egg        :: Actor
+    , _uActor     :: Actor
     , _actors     :: IntMap Actor
     , _effects    :: IntMap Effect
     , _statics    :: Array (Row, Col) (Char, Entity)
     , _playerDMap :: DijkstraMap
-    , _messageLog :: [String]
+    , _messageLog :: [Text]
     }
 
 data Status = Alive | Dead | Hidden deriving (Eq, Show)
 
 data Actor = Actor
-    { _eloc    :: (Row, Col)
+    { _aloc    :: (Row, Col)
     , _status  :: Status
     , _achar   :: Char
+    , _acolor  :: Color
     , _aentity :: Entity
     }
 
 instance HasEntity Actor where
   entity = lens _aentity (\v l -> l { _aentity = v })
 
-spawn :: (Row, Col) -> (Char, Entity) -> Game k Level ARef
-spawn pos (chr, ent) = do
+data Egg = Egg Char Color Entity
+
+spawn :: (Row, Col) -> Egg -> Game k Level ARef
+spawn pos (Egg chr color ent) = do
     uid <- uniqueInt
-    modifyLevel (\l -> l { _actors = IMap.insert uid (Actor pos Alive chr ent) (_actors l) })
+    modifyLevel (\l -> l { _actors = IMap.insert uid (Actor pos Alive chr color ent) (_actors l) })
     return (ARef uid)
 
 hidden :: Actor -> Bool
@@ -99,7 +104,7 @@ resurrect e = if _status e == Dead then e { _status = Alive } else e
 
 -- | Lens for an actors location
 loc :: Actor :-> (Row, Col)
-loc = lens _eloc (\v e -> e { _eloc = v })
+loc = lens _aloc (\v e -> e { _aloc = v })
 
 -- | Actor reference for the player.
 player :: ARef
@@ -121,7 +126,7 @@ living p = map (ARef . fst) . filter predicate . IMap.assocs . _actors
 aref :: ARef -> Level :~> Actor
 aref (ARef k) = unsafeWeakLens (lens get set)
   where
-    get l = maybe (_egg l) id . IMap.lookup k $ _actors l
+    get l = maybe (_uActor l) id . IMap.lookup k $ _actors l
 
     set v l = l { _actors = IMap.insert k v (_actors l) }
 
@@ -183,20 +188,24 @@ static pos = ECS.lens . sndLens . ix pos <# statics
 staticChar :: (Row, Col) -> Level :~> Char
 staticChar pos = fstLens . ix pos <# statics
 
--- FIXME: This was causing a big space leak...
-message :: String -> Game k Level ()
+message :: Text -> Game k Level ()
 message msg = modifyLevel (\l -> l { _messageLog = msg : _messageLog l })
 
 clearMessages :: Level -> Level
 clearMessages l = l { _messageLog = [] }
 
-messageLog :: Level -> [String]
+messageLog :: Level -> [Text]
 messageLog = _messageLog
 
 data Spell =
-      TargetActor (ARef -> Effect)
-    | TargetLocation ((Row, Col) -> Effect)
-    | TargetNone Effect
+      TargetActor Text (ARef -> Effect)
+    | TargetLocation Text ((Row, Col) -> Effect)
+    | TargetNone Text Effect
+
+spellName :: Spell -> Text
+spellName (TargetActor s _)    = s
+spellName (TargetLocation s _) = s
+spellName (TargetNone s _)     = s
 
 data Effect = Effect
     { effectDispel :: Maybe (Game () Level ())
@@ -238,9 +247,9 @@ defaultLevel = Level
     , _visible    = FOV.shadowCast (1,1) defaultFloor
     , _seen       = FOV.shadowCast (1,1) defaultFloor
     , _solid      = defaultFloor
-    , _egg        = Actor (1,1) Hidden 'e' ECS.empty
+    , _uActor     = Actor (1,1) Hidden 'e' Black ECS.empty
     , _player     = 0
-    , _actors     = IMap.insert 0 (Actor (1,1) Alive '@' ECS.empty) IMap.empty
+    , _actors     = IMap.insert 0 (Actor (1,1) Alive '@' White ECS.empty) IMap.empty
     , _effects    = IMap.empty
     , _statics    = array (bounds defaultFloor) (map (second (, ECS.empty)) (assocs defaultFloor'))
     , _playerDMap = mkDijkstraMap [(1,1)] defaultFloor
@@ -254,10 +263,10 @@ arrayToJSON toChar arr@(bounds -> (_, (mr, mc))) = J.Array $ V.generate (mr + 1)
     textRow r = J.String . T.pack $ map (toChar . (!) arr . (,) r) [0..mc]
 
 actorToJSON entityToJSON actor = J.object
-  [ (T.pack "row", J.toJSON . fst $ _eloc actor)
-  , (T.pack "col", J.toJSON . snd $ _eloc actor)
-  , (T.pack "chr", if _status actor == Dead then J.toJSON 'c' else J.toJSON (_achar actor))
-  , (T.pack "entity", entityToJSON (_aentity actor))
+  [ ("row", J.toJSON . fst $ _aloc actor)
+  , ("col", J.toJSON . snd $ _aloc actor)
+  , ("chr", if _status actor == Dead then J.toJSON 'c' else J.toJSON (_achar actor))
+  , ("entity", entityToJSON (_aentity actor))
   ]
 
 actorsToJSON :: (Entity -> J.Value) -> IntMap Actor -> J.Value
@@ -267,13 +276,13 @@ actorsToJSON entityToJSON = J.object . IMap.foldrWithKey f []
 
 levelToJSON :: (Entity -> J.Value) -> Level -> J.Value
 levelToJSON entityToJSON lev = J.object
-    [ (T.pack "rows", J.toJSON . succ . fst . snd . bounds $ _statics lev)
-    , (T.pack "cols", J.toJSON . succ . snd . snd . bounds $ _statics lev)
-    , (T.pack "statics", arrayToJSON fst (_statics lev))
-    , (T.pack "visible", arrayToJSON boolChar (_visible lev))
-    , (T.pack "seen", arrayToJSON boolChar (_seen lev))
-    , (T.pack "actors", actorsToJSON entityToJSON (_actors lev))
-    , (T.pack "messages", J.toJSON (_messageLog lev))
+    [ ("rows", J.toJSON . succ . fst . snd . bounds $ _statics lev)
+    , ("cols", J.toJSON . succ . snd . snd . bounds $ _statics lev)
+    , ("statics", arrayToJSON fst (_statics lev))
+    , ("visible", arrayToJSON boolChar (_visible lev))
+    , ("seen", arrayToJSON boolChar (_seen lev))
+    , ("actors", actorsToJSON entityToJSON (_actors lev))
+    , ("messages", J.toJSON (_messageLog lev))
     ]
   where
     boolChar True = '#'

@@ -13,9 +13,11 @@ module Core.Types
   , ix, ixD
   -- * Functor fixpoints and anamorphisms
   , Fix (..)
-  , step, eternal
+  , step, eternal, fixF
   -- * Topped Types
   , Topped (..)
+  -- * Standard Terminal Colors
+  , Color (..)
   -- * Re-exports
   , module Control.Category
   , module Data.Lens.Common
@@ -177,6 +179,9 @@ instance Applicative f => Monoid (Fix f) where
 step :: Functor f => Fix f -> f (Fix f)
 step (Ana f x) = Ana f <$> f x
 
+fixF :: Functor f => f (Fix f) -> Fix f
+fixF = Ana (fmap step)
+
 eternal :: Functor f => f () -> Fix f
 eternal g = Ana (const g) ()
 
@@ -193,3 +198,5 @@ instance Ord a => Ord (Topped a) where
   _ <= Top = True
   Top <= _ = False
   (NotTop x) <= (NotTop y) = x <= y
+
+data Color = Black | Red | Green | Yellow | Blue | Magenta | Cyan | White
