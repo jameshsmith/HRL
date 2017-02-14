@@ -2,4 +2,4 @@
 
 *(Name subject to change)*
 
-![Screenshot](/Screenshot/sample01.png)
+![Screenshot](/Screenshot/sample02.png)

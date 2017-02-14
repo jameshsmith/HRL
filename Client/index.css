@@ -6,6 +6,24 @@ body {
     color: white;
 }
 
+.bottombar {
+    position:fixed;
+    bottom: 0px;
+    left:50%;
+    margin-left: -357px;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
+.playerimg {
+    position: fixed;
+    bottom: 5px;
+    left: 50%;
+    margin-left: -16px;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
 #messagebox {
     width: 500px;
     height: 200px;
@@ -19,6 +37,7 @@ body {
     background-color: black;
     opacity: 0.8;
     border: 1px solid grey;
+    -webkit-user-drag: none;
     -webkit-user-select: none;
 }
 
