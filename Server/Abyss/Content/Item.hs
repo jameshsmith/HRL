@@ -4,3 +4,5 @@ import Prelude hiding (lookup)
 
 lookup :: IRef -> Item
 lookup = undefined
+
+longsword :: 
