@@ -1,11 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 
-module Abyss.Content.Spell
-    ( luckCurse
+module Abyss.Spell
+    ( Target (..)
+    , name
+    , target
+    , every
     , fizzle
     , fizzleEffect
-    , every
+    , luckCurse
     ) where
 
 import Prelude hiding ((.), id)
@@ -25,20 +28,33 @@ import qualified Data.Map as Map
 
 import Data.Text (Text)
 
+data Spell = Spell Text Target
+
+data Target =
+      Actor (ARef -> Effect)
+    | Location ((Row, Col) -> Effect)
+    | None Effect
+
+name :: Spell -> Text
+name (Spell s _) = s
+
+target :: Spell -> Target
+target (Spell _ t) = t
+
 every :: Map Text Spell 
-every = Map.fromList $ map (spellName &&& id)
+every = Map.fromList $ map (name &&& id)
     [ luckCurse
     , fizzle
     ]
 
 fizzle :: Spell
-fizzle = TargetNone "Fizzle" fizzleEffect
+fizzle = Spell "Fizzle" (None fizzleEffect)
 
 fizzleEffect :: Effect
 fizzleEffect = Effect Nothing (Ana (\s -> lift (message s) >> mzero) "*Fizzle*")
 
 luckCurse :: Spell
-luckCurse = TargetActor "Curse of Misfortune" $ \aref ->
+luckCurse = Spell "Curse of Misfortune" . Actor $ \aref ->
     Effect Nothing (Ana (luckCurse' aref) Nothing)
 
 luckCurse' :: ARef -> Maybe (Int, MRef) -> MaybeT (Game k Level) (Maybe (Int, MRef))

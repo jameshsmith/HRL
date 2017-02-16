@@ -4,7 +4,7 @@ module Abyss.Game (initGame, Action (..)) where
 import Prelude hiding ((.), id)
 
 import Abyss.Stats
-import qualified Abyss.Content.Spell as Spell
+import qualified Abyss.Spell as Spell
 import Core.Types
 import Core.Engine
 import Core.Monad
@@ -188,10 +188,10 @@ handleAct (Activate dir) = do
     player `activate` move4 dir pLoc
 
 handleAct (Cast sname l) =
-    case Map.findWithDefault Spell.fizzle sname Spell.every of
-        TargetNone _ eff -> cast eff
-        TargetLocation _ eff -> cast (eff l)
-        TargetActor _ eff -> do
+    case Spell.target (Map.findWithDefault Spell.fizzle sname Spell.every) of
+        Spell.None eff -> cast eff
+        Spell.Location eff -> cast (eff l)
+        Spell.Actor eff -> do
             occupier <- listToMaybe . living (\a -> a ^. loc == l) <$> level
             case occupier of
                 Just mon -> cast (eff mon)

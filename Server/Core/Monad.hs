@@ -7,7 +7,7 @@ module Core.Monad
     , Result (..)
     -- * Dice and random numbers
     , roll, coin, d4, d6, d8, d10, d12, d20, d24, d30, d100
-    , Dice (Roll), dice, pick
+    , Dice (Roll, Const), dice, pick
     -- * Other suspensions
     , yesNo, turn, uniqueInt
     , generate

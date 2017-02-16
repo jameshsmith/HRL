@@ -4,7 +4,6 @@ module Core.Engine
     , Level
     , Status
     , Actor
-    , Spell (..)
     , Effect (..)
     , hidden, alive, dead, kill, resurrect
     , spawn, Egg (..)
@@ -21,7 +20,6 @@ module Core.Engine
     , statics, static, staticChar
     , message, messageLog, clearMessages
     , runEffects
-    , spellName
     , cast
     , defaultLevel
     , levelToJSON
@@ -196,16 +194,6 @@ clearMessages l = l { _messageLog = [] }
 
 messageLog :: Level -> [Text]
 messageLog = _messageLog
-
-data Spell =
-      TargetActor Text (ARef -> Effect)
-    | TargetLocation Text ((Row, Col) -> Effect)
-    | TargetNone Text Effect
-
-spellName :: Spell -> Text
-spellName (TargetActor s _)    = s
-spellName (TargetLocation s _) = s
-spellName (TargetNone s _)     = s
 
 data Effect = Effect
     { effectDispel :: Maybe (Game () Level ())
