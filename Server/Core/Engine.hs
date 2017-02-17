@@ -58,7 +58,7 @@ data Level = Level
     , _uActor     :: Actor
     , _actors     :: IntMap Actor
     , _effects    :: IntMap Effect
-    , _peffects   :: IntMap Effect
+    , _peffects   :: IntMap Effect  -- Processed effects
     , _statics    :: Array (Row, Col) (Char, Entity)
     , _playerDMap :: DijkstraMap
     , _messageLog :: [Text]
