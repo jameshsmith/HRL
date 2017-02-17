@@ -62,13 +62,16 @@ type a :-> b = Lens a b
 -- a is not a @Level@. Instead, we use @(<#)@ to combine Weak lenses
 -- with ordinary lenses.
 --
--- Note that (currently) nothing game-crashingly bad happends if you
--- try to use a undefined reference, and the above code could even
--- make sense as part of a time-travel game mechanic. One could set
--- all undefined monsters as some kind of Dr Who-esque temporal
--- paradox monster, and then trying to access an undefined monster
--- would create such a paradox monster.
-newtype a :~> b = WL { weak :: a :-> b } 
+-- Note that (currently) nothing particularly bad happens if you try
+-- to use a undefined reference, and the above code could even make
+-- sense as part of a time-travel game mechanic. One could set all
+-- undefined monsters as some kind of Dr Who-esque temporal paradox
+-- monster, and then trying to access an undefined monster would
+-- create such a paradox monster. At the very least I think to keeping
+-- lenses into the game level somehow seperate will potentially be
+-- useful if I need to optimize the game in the future by adding
+-- mutable state using IOArrays or similar.
+newtype a :~> b = WL { weak :: a :-> b }
 
 -- | Introduce weak lenses from ordinary lenses. It's marked unsafe
 -- because @unsafeWeakLens id@ would make @(:~>)@ a category, which

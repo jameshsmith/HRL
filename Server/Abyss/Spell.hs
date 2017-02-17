@@ -94,8 +94,10 @@ timetwister' s
       l <- level
       message ("Temporal reset in: 10")
       return (Just (9, l))
+
   | Just (n, l) <- s
   , n == 0           = lift (unsafeWeakLens id != l) >> mzero
+
   | Just (n, l) <- s = lift $ do
       message ("Temporal reset in: " <> T.pack (show n))
       return (Just (n - 1, l))
