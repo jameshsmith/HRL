@@ -217,6 +217,8 @@ function start () {
 }
 
 function actionMessage (act) {
+    waiting = true
+    
     return {"type": "action", "payload": act}
 }
 
@@ -226,7 +228,6 @@ function keyPress (event) {
     if (!waiting) {
 	keyPressPrime(event)
     }
-    waiting = true
 }
 
 function keyPressPrime (event) {
@@ -468,7 +469,6 @@ function canvasClick (event) {
     if (!waiting) {
 	socket.sendMessage(actionMessage({"name": spell, "row": selectedR, "col": selectedC}))
     }
-    waiting = true
 }
 
 function animate() {
