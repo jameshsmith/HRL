@@ -18,11 +18,14 @@ import Core.Monad
 import Core.Engine
 import Component.AI
 import Component.Modifier
+import Component.Name
+import Abyss.Stats
 
 import Control.Arrow ((&&&))
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 import Control.Monad
+import Data.Monoid ((<>))
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -45,6 +48,7 @@ every :: Map Text Spell
 every = Map.fromList $ map (name &&& id)
     [ luckCurse
     , fizzle
+    , fireblast
     ]
 
 fizzle :: Spell
@@ -53,6 +57,19 @@ fizzle = Spell "Fizzle" (None fizzleEffect)
 fizzleEffect :: Effect
 fizzleEffect = Effect Nothing (Ana (\s -> lift (message s) >> mzero) "*Fizzle*")
 
+simpleEffect :: Game () Level () -> Effect
+simpleEffect m = Effect Nothing (Ana (\_ -> lift m >> mzero) ())
+
+fireblast :: Spell
+fireblast = Spell "Fireblast" . Actor $ \aref -> simpleEffect (fireblast' aref)
+
+fireblast' :: ARef -> Game () Level ()
+fireblast' victim = do
+    dam <- rollDamage [(Roll 1 d6, Fire)] =<< modified victim
+    actor victim %= (+ Hurt (sum (map fst dam)))
+    (Name vName) <- modified victim
+    message ("Fireblast hit " <> vName <> " for " <> prettyDamage dam)
+                                                              
 luckCurse :: Spell
 luckCurse = Spell "Curse of Misfortune" . Actor $ \aref ->
     Effect Nothing (Ana (luckCurse' aref) Nothing)

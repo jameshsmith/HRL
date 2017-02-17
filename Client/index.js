@@ -438,6 +438,8 @@ function init() {
     renderer.domElement.addEventListener("click", canvasClick)
     
     document.body.appendChild( renderer.domElement )
+
+    populateSpellbook()
 }
 
 var raycaster = new THREE.Raycaster()
@@ -446,8 +448,6 @@ var groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 32)
 
 var selectedR = 0
 var selectedC = 0
-
-var spell = "Curse of Misfortune"
 
 function canvasMouseMove (event) {
     mouseXY.x = (event.pageX / 1680) * 2 - 1
@@ -485,4 +485,113 @@ function animate() {
 
     renderer.render(scene, camera);
  
+}
+
+// =====================================================
+// Spell Management
+// =====================================================
+
+var spell = ""
+var spellbook = ["Curse of Misfortune", "Fireblast"]
+
+var spellSrc
+var spellAlt
+var spellOrigin = null
+
+function populateSpellbook () {
+    for (var s in spellbook) {
+	var entry = document.createElement("div")
+	entry.className = "bookentry"
+
+	var img = document.createElement("img")
+	img.src = "ui/spell/" + spellbook[s] + ".png"
+	img.alt = spellbook[s]
+	img.draggable = true
+	img.addEventListener("dragstart", spellDrag)
+	img.addEventListener("dragend", spellDragEnd)
+
+	var name = document.createElement("div")
+	name.className = "name"
+	name.innerHTML = spellbook[s]
+
+	entry.appendChild(img)
+	entry.appendChild(name)
+	
+	var spellbookNode = document.getElementById("spells")
+	spellbookNode.appendChild(entry)
+    }
+}
+
+function allowDrop (event) {
+    event.preventDefault()
+}
+
+function spellDrag (event) {
+    
+    var img = event.target
+
+    event.dataTransfer.setDragImage(img, 16, 16)
+
+    spellSrc = img.src
+    spellAlt = img.alt
+    spellOrigin = img.closest(".spellbar")
+
+    var slots = document.getElementsByClassName("spellbar");
+
+    for (var i = 0; i < slots.length; i++) {
+	slots[i].style.background = "limegreen"
+	slots[i].addEventListener("dragover", allowDrop)
+	slots[i].addEventListener("drop", spellDrop)
+    }
+}
+
+function spellDragEnd (event) {
+    event.preventDefault()
+
+    var slots = document.getElementsByClassName("spellbar")
+
+    for (var i = 0; i < slots.length; i++) {
+	slots[i].style.removeProperty("background")
+	slots[i].removeEventListener("dragover", allowDrop)
+	slots[i].removeEventListener("drop", spellDrop)
+    }
+}
+    
+function spellDrop (event) {
+    event.preventDefault()
+
+    var target = event.target.closest(".spellbar")
+
+    if (spellOrigin !== null) {
+	while (spellOrigin.hasChildNodes()) {
+	    spellOrigin.removeChild(spellOrigin.lastChild)
+	}
+
+	if (target.hasChildNodes()) {
+	    spellOrigin.appendChild(target.lastChild)
+	}
+    }
+    
+    while (target.hasChildNodes()) {
+	console.log("Removing " + target.lastChild)
+	
+	target.removeChild(target.lastChild)
+    }
+    
+    var img = document.createElement("img")
+    img.src = spellSrc
+    img.alt = spellAlt
+    img.draggable = true
+    img.addEventListener("click", spellClick)
+    img.addEventListener("dragstart", spellDrag)
+    img.addEventListener("dragend", spellDragEnd)
+    
+    target.appendChild(img)
+}
+
+function spellClick (event) {
+    if (event.target.alt !== undefined) {
+	console.log("Setting spell to " + event.target.alt)
+	spell = event.target.alt
+    }
 }

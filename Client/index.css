@@ -24,6 +24,51 @@ body {
     -webkit-user-drag: none;
 }
 
+.spellbar {
+    position: fixed;
+    width: 32px;
+    height: 32px;
+    z-index: 10;
+    bottom: 3px;
+    left: 50%;
+}
+
+#spell1 {
+    margin-left: 57px;
+}
+
+#spell2 {
+    margin-left: 90px;
+}
+
+#spell3 {
+    margin-left: 123px;
+}
+
+#spell4 {
+    margin-left: 156px;
+}
+
+#spell5 {
+    margin-left: 189px;
+}
+
+#spell6 {
+    margin-left: 222px;
+}
+
+#spell7 {
+    margin-left: 255px;
+}
+
+#spell8 {
+    margin-left: 288px;
+}
+
+#spell9 {
+    margin-left: 321px;
+}
+
 #messagebox {
     width: 500px;
     height: 200px;
@@ -53,7 +98,7 @@ body {
     line-height: 23px;
     background-color: grey;
     background-image: url("ui/titlebar.png");
-    background-repeat: repeat-y;
+    /* background-repeat: repeat-y; */
     color: white;
     text-align: center;
     text-shadow: 2px 2px 5px black;
@@ -74,9 +119,36 @@ body {
     pointer-events: none;
 }
 
-#inventory {
-    height: 100px;
-    width: 100px;
+.bookentry {
+    width: 100%;
+    background: black;
+    height:34px;
+    line-height: 23px;
+    position: relative;
+     background-image: url("ui/bookentry.png");
+    background-repeat: repeat-x;
+}
+
+.bookentry img {
+    top: 1px;
+    left: 1px;
+    height: 32px;
+    width: 32px;
+    position: absolute;
+}
+
+.bookentry div {
+    top: 5px;
+    left: 40px;
+    height: 32px;
+    position: absolute;
+}
+
+#spellbook {
+    height: 400px;
+    width: 300px;
+    border: 1px solid grey;
+    background: black;
     z-index: 10;
 }
 

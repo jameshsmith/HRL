@@ -133,9 +133,9 @@ rollToHit threat attacker defender = do
 
     def = defender ^. defense + bonus DEX defender
 
-rollDamage :: Stats -> Stats -> Game k l [(Int, DamageType)]
+rollDamage :: [(Dice, DamageType)] -> Stats -> Game k l [(Int, DamageType)]
 rollDamage attacker defender = do
-    fmap absorb $ forM (_damage attacker) $ \(amount, dtype) ->
+    fmap absorb $ forM attacker $ \(amount, dtype) ->
         fmap (\x -> (x - Map.findWithDefault 0 dtype (_resists defender), dtype)) (dice amount)
   where
     absorb = filter ((> 0) . fst) . map (\(amount, dtype) -> (amount - bonus CON defender, dtype))
@@ -160,14 +160,17 @@ meleeAttack attacker defender = do
       Botch    -> return ()  -- TODO: Think of something mean
       Fail     -> return ()
       Pass     -> do
-          dam <- rollDamage astats dstats
+          dam <- rollDamage (_damage astats) dstats
           actor defender %= (+ Hurt (sum (map fst dam)))
-          message ("did " <> T.intercalate ", " (map prettyDam dam))
+          message ("did " <> prettyDamage dam)
 
       Critical -> do
-          dam <- rollMax (rollDamage astats dstats)
+          dam <- rollMax (rollDamage (_damage astats) dstats)
           actor defender %= (+ Hurt (sum (map fst dam)))
-          message ("did " <> T.intercalate ", " (map prettyDam dam) <> "!")
+          message ("did " <> prettyDamage dam <> "!")
+
+prettyDamage :: Show a => [(a, DamageType)] -> Text
+prettyDamage dam = T.intercalate ", " (map prettyDam dam)
   where
     prettyDam (n, d) = T.pack (show n) <> " " <> T.toLower (T.pack (show d))
     

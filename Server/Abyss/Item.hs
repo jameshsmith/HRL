@@ -4,9 +4,12 @@ module Abyss.Item
     , itemName
     , itemDesc
     , itemModifier
+    , Inventory (..)
     , longsword
     , longswordP1
     , longswordP2
+    , longswordP3
+    , leatherArmor
     ) where
 
 import Abyss.Stats
@@ -47,7 +50,19 @@ longswordP1 = Item "Longsword +1" "1d6+1 slashing damage. +1 attack." (swordMod 
 longswordP2 :: Item
 longswordP2 = Item "Longsword +2" "1d6+2 slashing damage. +2 attack." (swordMod 2)
 
+longswordP3 :: Item
+longswordP3 = Item "Longsword +3" "1d6+3 slashing damage. +3 attack." (swordMod 3)
+
 swordMod :: Int -> ECS.Entity -> ECS.Entity
 swordMod n =
     ECS.modify (setL damage [(Roll 1 d6 + Const n, Slashing)])
     >>> ECS.modify (modL attack (+ n))
+
+leatherArmor :: Item
+leatherArmor = Item "Leather Armor" "+2 defense. Maximum dex bonus 4" (armor 2 (NotTop 4))
+
+armor :: Int -> Topped Int -> ECS.Entity -> ECS.Entity
+armor x y =
+    ECS.modify (modL defense (+ x))
+    >>> ECS.modify (modL (maxBonus DEX) (min y))
+    

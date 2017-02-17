@@ -9,13 +9,17 @@
   </head>
   <body onload="start()" onkeydown="keyPress(event)">
     Testing...
-    <div class="window" id="inventory">
+    
+    <div class="window" id="spellbook">
       <div class="titlebar" onmousedown="tbMoveStart(event)" onmouseup="tbMoveEnd(event)">
 	<img class="tbleft" src="ui/tbleft.png">
-	Inventory
+	Spellbook
 	<img class="tbright" src="ui/tbright.png">
       </div>
+      <div id="spells">
+      </div>
     </div>
+    
     <div class="window" id="messagebox">
       <div class="titlebar" onmousedown="tbMoveStart(event)" onmouseup="tbMoveEnd(event)">
 	<img class="tbleft" src="ui/tbleft.png">
@@ -24,8 +28,20 @@
       </div>
       <div id="messages">
       </div>
-      <img class="bottombar" src="ui/bar.png">
-      <img class="playerimg" src="textures/actor/fighter.png">
     </div>
+    
+    <img class="bottombar" src="ui/bar.png">
+    
+    <div class="spellbar" id="spell1"></div>
+    <div class="spellbar" id="spell2"></div>
+    <div class="spellbar" id="spell3"></div>
+    <div class="spellbar" id="spell4"></div>
+    <div class="spellbar" id="spell5"></div>
+    <div class="spellbar" id="spell6"></div>
+    <div class="spellbar" id="spell7"></div>
+    <div class="spellbar" id="spell8"></div>
+    <div class="spellbar" id="spell9"></div>
+    
+    <img class="playerimg" src="textures/actor/fighter.png">
   </body>
 </html>
