@@ -492,7 +492,7 @@ function animate() {
 // =====================================================
 
 var spell = ""
-var spellbook = ["Curse of Misfortune", "Fireblast"]
+var spellbook = ["Curse of Misfortune", "Fireblast", "Timetwister"]
 
 var spellSrc
 var spellAlt

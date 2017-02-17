@@ -10,6 +10,7 @@ module Abyss.Spell
     , fizzleEffect
     , luckCurse
     , fireblast
+    , timetwister
     ) where
 
 import Prelude hiding ((.), id)
@@ -31,6 +32,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 
 import Data.Text (Text)
+import qualified Data.Text as T
 
 data Spell = Spell Text Target
 
@@ -50,6 +52,7 @@ every = Map.fromList $ map (name &&& id)
     [ luckCurse
     , fizzle
     , fireblast
+    , timetwister
     ]
 
 fizzle :: Spell
@@ -81,4 +84,18 @@ luckCurse' ref s
   | Just (n, m) <- s
   , n == 0           = lift (removeModifier m) >> mzero
   | Just (n, m) <- s = return (Just (n - 1, m))
-      
+
+timetwister :: Spell
+timetwister = Spell "Timetwister" (None (Effect Nothing (Ana timetwister' Nothing)))
+
+timetwister' :: Maybe (Int, Level) -> MaybeT (Game k Level) (Maybe (Int, Level))
+timetwister' s
+  | Nothing     <- s = lift $ do
+      l <- level
+      message ("Temporal reset in: 10")
+      return (Just (9, l))
+  | Just (n, l) <- s
+  , n == 0           = lift (unsafeWeakLens id != l) >> mzero
+  | Just (n, l) <- s = lift $ do
+      message ("Temporal reset in: " <> T.pack (show n))
+      return (Just (n - 1, l))

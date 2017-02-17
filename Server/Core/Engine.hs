@@ -35,7 +35,6 @@ import Core.Monad
 import Core.Types
 
 import Control.Arrow (second)
-import Control.Monad
 import Control.Monad.Trans.Maybe
 import Data.Array.Unboxed
 import Data.IntMap (IntMap)
@@ -59,6 +58,7 @@ data Level = Level
     , _uActor     :: Actor
     , _actors     :: IntMap Actor
     , _effects    :: IntMap Effect
+    , _peffects   :: IntMap Effect
     , _statics    :: Array (Row, Col) (Char, Entity)
     , _playerDMap :: DijkstraMap
     , _messageLog :: [Text]
@@ -208,15 +208,26 @@ cast eff = do
 effects :: Level :~> IntMap Effect
 effects = unsafeWeakLens (lens _effects (\v l -> l { _effects = v }))
 
+peffects :: Level :~> IntMap Effect
+peffects = unsafeWeakLens (lens _peffects (\v l -> l { _peffects = v }))
+
 runEffects :: Game k Level ()
-runEffects = noTurn $ do
+runEffects = peffects != IMap.empty >> noTurn runEffects'
+
+runEffects' :: Game () Level ()
+runEffects' = do
     effs <- access effects
-    forM_ (IMap.keys effs) $ \key -> do
-        let (Just (Effect d act)) = IMap.lookup key effs
-        res <- runMaybeT (step act)
-        case res of
-            Nothing   -> effects %= IMap.delete key
-            Just act' -> effects %= IMap.insert key (Effect d act')
+    if IMap.null effs
+        then effects ~= access peffects
+        else do
+            let ((key, Effect d act), effs') = IMap.deleteFindMax effs
+            effects != effs'
+            res <- runMaybeT (step act)
+            case res of
+                Nothing -> runEffects'
+                Just act' -> do
+                    peffects %= IMap.insert key (Effect d act')
+                    runEffects'
 
 defaultFloor' :: UArray (Row, Col) Char
 defaultFloor' = listArray ((0,0), (length dun - 1, length (head dun) - 1)) (concat dun)
@@ -239,6 +250,7 @@ defaultLevel = Level
     , _player     = 0
     , _actors     = IMap.insert 0 (Actor (1,1) Alive '@' White ECS.empty) IMap.empty
     , _effects    = IMap.empty
+    , _peffects   = IMap.empty
     , _statics    = array (bounds defaultFloor) (map (second (, ECS.empty)) (assocs defaultFloor'))
     , _playerDMap = mkDijkstraMap [(1,1)] defaultFloor
     , _messageLog = []
