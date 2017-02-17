@@ -9,6 +9,7 @@ module Abyss.Spell
     , fizzle
     , fizzleEffect
     , luckCurse
+    , fireblast
     ) where
 
 import Prelude hiding ((.), id)
