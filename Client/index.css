@@ -116,7 +116,7 @@ body {
 .tbright {
     right: 0px;
     position: absolute;
-    pointer-events: none;
+    /* pointer-events: none; */
 }
 
 .bookentry {

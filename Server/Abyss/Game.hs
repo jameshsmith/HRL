@@ -123,8 +123,8 @@ rooms :: [(Int, Int)]
 rooms = [(6,7),(6,5),(4,4),(3,4),(4,2)] ++ concat (repeat [(3,3),(2,2),(2,2),(2,1)])
 
 initStatic :: Bool -> (Char, ECS.Entity)
-initStatic True = ('#', ECS.empty)
-initStatic False = (' ', ECS.empty)
+initStatic True = ('#', setL ECS.lens (Name "Wall") ECS.empty)
+initStatic False = (' ', setL ECS.lens (Name "Floor") ECS.empty)
 
 initGame :: Game Action Level ()
 initGame = do

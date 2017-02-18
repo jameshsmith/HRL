@@ -245,6 +245,12 @@ function keyPressPrime (event) {
 	    socket.sendMessage(actionMessage("skip"))
 	} else if (event.key === "t") {
 	    chord += "t"
+	} else if (event.key === "b") {
+	    var win = document.getElementById("spellbook")
+	    win.style.visibility = "visible"
+	} else if (event.key === "m") {
+	    var win = document.getElementById("messagebox")
+	    win.style.visibility = "visible"
 	}
     } else if (chord === "t") {
 	if (event.key === "w") {
@@ -262,8 +268,9 @@ function keyPressPrime (event) {
 }
 
 // =====================================================
-// Dragging Windows
+// Dragging Windows and Titlebars
 // =====================================================
+
 var dragWindow
 
 function tbMove (event) {
@@ -285,6 +292,21 @@ function tbMoveEnd (event) {
     document.removeEventListener("mousemove", tbMove)
 }
 
+function tbHideEnter (event) {
+    event.target.src="ui/tbrightc.png"
+}
+
+function tbHideLeave (event) {
+    event.target.src="ui/tbright.png"
+}
+
+function tbHide (event) {
+    var win = event.target.closest(".window")
+    console.log(win)
+    win.style.visibility = "hidden"
+    
+    event.stopPropagation()
+}
 
 function start () {
     init();
@@ -485,6 +507,61 @@ function animate() {
 
     renderer.render(scene, camera);
  
+}
+
+// =====================================================
+// Temporary Window Management
+// =====================================================
+   
+/*
+  Create an empty window of a certain at a location. Returns an empty,
+  unstyled div for the contents of the window.
+*/
+function winCreate (title, x, y, h, w) {
+    var win = document.createElement("div")
+    win.className = "window"
+    win.style.height = h + "px"
+    win.style.width = w + "px"
+    win.style.left = x + "px"
+    win.style.top = y + "px"
+    
+    var tb = document.createElement("div")
+    tb.className = "titlebar"
+    tb.addEventListener("mousedown", tbMoveStart)
+    tb.addEventListener("mouseup", tbMoveEnd)
+    
+    var tbLeft = document.createElement("img")
+    tbLeft.className = "tbleft"
+    tbLeft.src = "ui/tbleft.png"
+    
+    var tbTitle = document.createTextNode(title)
+    
+    var tbRight = document.createElement("img")
+    tbRight.className = "tbright"
+    tbRight.src = "ui/tbright.png"
+    tbRight.addEventListener("mouseenter", function () {
+	tbRight.src = "ui/tbrightc.png"
+    })
+    tbRight.addEventListener("mouseleave", function () {
+	tbRight.src = "ui/tbright.png"
+    })
+    tbRight.addEventListener("mousedown", function (event) {
+	document.body.removeChild(win)
+	event.stopPropagation()
+    })
+
+    tb.appendChild(tbLeft)
+    tb.appendChild(tbTitle)
+    tb.appendChild(tbRight)
+
+    var content = document.createElement("div")
+    
+    win.appendChild(tb)
+    win.appendChild(content)
+    
+    document.body.appendChild(win)
+
+    return content
 }
 
 // =====================================================
