@@ -1,5 +1,5 @@
-# Abyss Aeternum
+# A Haskell Roguelike
 
-*(Name subject to change)*
+*(With some javascript as well...)*
 
 ![Screenshot](/Screenshot/sample02.png)
