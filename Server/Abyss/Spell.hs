@@ -10,7 +10,7 @@ module Abyss.Spell
     , fizzleEffect
     , luckCurse
     , fireblast
-    , timetwister
+    , timereversal
     ) where
 
 import Prelude hiding ((.), id)
@@ -53,7 +53,7 @@ every = Map.fromList $ map (name &&& id)
     [ luckCurse
     , fizzle
     , fireblast
-    , timetwister
+    , timereversal
     ]
 
 fizzle :: Spell
@@ -92,11 +92,11 @@ luckCurse' ref s
   , n == 0           = lift (removeModifier m) >> mzero
   | Just (n, m) <- s = return (Just (n - 1, m))
 
-timetwister :: Spell
-timetwister = Spell "Timetwister" (None (Effect Nothing (fixFree timetwister')))
+timereversal :: Spell
+timereversal = Spell "Time Reversal" (None (Effect Nothing (fixFree timereversal')))
 
-timetwister' :: Free (Game k Level) ()
-timetwister' = do
+timereversal' :: Free (Game k Level) ()
+timereversal' = do
     l <- liftF (message "Temporal reset in 10" >> level)
     forM_ [9, 8..1] $ \n ->
         liftF (message ("Temporal reset in " <> T.pack (show n)))

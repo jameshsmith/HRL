@@ -1,10 +1,11 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ViewPatterns #-}
 module Abyss.Item
     ( Item
     , itemName
     , itemDesc
     , itemModifier
     , Inventory (..)
+    , inventoryJSON
     , longsword
     , longswordP1
     , longswordP2
@@ -12,14 +13,20 @@ module Abyss.Item
     , leatherArmor
     ) where
 
+import Prelude hiding ((.), id)
+
 import Abyss.Stats
 import Core.Types
 import Core.Monad
+import Core.Engine
 import qualified Core.ECS as ECS
+import Component.Name
+import Component.Modifier
 
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Text (Text)
+import qualified Data.Aeson as J
 
 data Item = Item
     { _name     :: Text
@@ -40,6 +47,25 @@ data Inventory = Inventory (Map Text Int)
 
 instance ECS.Component Inventory where
   stock = Inventory Map.empty
+
+instance J.ToJSON Inventory where
+  toJSON (Inventory i) = J.toJSON i
+
+inventoryJSON :: (Row, Col) -> Level -> J.Value
+inventoryJSON l lev = J.object $
+    ("static", entityInventoryJSON (getL (weak (sndLens . ix l <# statics)) lev)) : actorInvs
+  where
+    refs = actors (\a -> a ^. loc == l) lev
+
+    actorInv ref = actorToJSON entityInventoryJSON (getL (weak (aref ref)) lev)
+
+    actorInvs = map (\ref -> (arefJSON ref, actorInv ref)) refs
+
+entityInventoryJSON :: ECS.Entity -> J.Value
+entityInventoryJSON (selfModify -> ent) = J.object
+  [ ("name", J.toJSON (getL ECS.lens ent :: Name))
+  , ("items", J.toJSON (getL ECS.lens ent :: Inventory))
+  ]
 
 longsword :: Item
 longsword = Item "Longsword" "1d6 slashing damage" (swordMod 0)

@@ -12,6 +12,7 @@ module Core.Engine
     , aref
     , actors
     , living
+    , livingAt
     , monsters
     , corpses
     , actor, actorChar
@@ -22,6 +23,8 @@ module Core.Engine
     , runEffects
     , cast
     , defaultLevel
+    , arefJSON
+    , actorToJSON
     , levelToJSON
     ) where
 
@@ -39,6 +42,7 @@ import Control.Monad.Trans.Maybe
 import Data.Array.Unboxed
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IMap
+import Data.Maybe (listToMaybe)
 
 import qualified Data.Aeson as J
 import Data.Text (Text)
@@ -119,6 +123,9 @@ living :: (Actor -> Bool) -> Level -> [ARef]
 living p = map (ARef . fst) . filter predicate . IMap.assocs . _actors
   where
     predicate (_, e) = p e && alive e
+
+livingAt :: (Row, Col) -> Level -> Maybe ARef
+livingAt l = listToMaybe . living (\a -> a ^. loc == l)
 
 -- | Get an actor lens from an actor reference. 
 aref :: ARef -> Level :~> Actor
@@ -267,12 +274,16 @@ arrayToJSON toChar arr@(bounds -> (_, (mr, mc))) = J.Array $ V.generate (mr + 1)
         if c > mc then Nothing else Just (toChar (arr ! (r, c)), c + 1)
 -}
 
+actorToJSON :: (Entity -> J.Value) -> Actor -> J.Value
 actorToJSON entityToJSON actor = J.object
   [ ("row", J.toJSON . fst $ _aloc actor)
   , ("col", J.toJSON . snd $ _aloc actor)
   , ("chr", if _status actor == Dead then J.toJSON 'c' else J.toJSON (_achar actor))
   , ("entity", entityToJSON (_aentity actor))
   ]
+
+arefJSON :: ARef -> Text
+arefJSON (ARef n) = T.pack ('a' : show n)
 
 actorsToJSON :: (Entity -> J.Value) -> IntMap Actor -> J.Value
 actorsToJSON entityToJSON = J.object . IMap.foldrWithKey f []

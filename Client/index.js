@@ -569,7 +569,7 @@ function winCreate (title, x, y, h, w) {
 // =====================================================
 
 var spell = ""
-var spellbook = ["Curse of Misfortune", "Fireblast", "Timetwister"]
+var spellbook = ["Curse of Misfortune", "Fireblast", "Time Reversal"]
 
 var spellSrc
 var spellAlt

@@ -5,6 +5,7 @@ import Prelude hiding ((.), id)
 
 import Abyss.Game
 import Abyss.Stats
+import Abyss.Item
 import Core.Types
 import Core.Monad
 import Core.Engine
@@ -14,7 +15,6 @@ import Server.Save
 
 import Control.Monad
 import Control.Monad.State (runState)
-import qualified Data.Map as Map
 import Data.Maybe (listToMaybe)
 import System.Console.GetOpt
 import System.Environment (getArgs)
@@ -89,10 +89,10 @@ evalGame :: Handle
 evalGame hdl sav conn exitContinuation = load sav initGame defaultLevel 1 0
   where
     load :: [Input] -> Game Action Level () -> Level -> Int -> Int -> IO ()
-    load [] g l n _ = sendJSON conn (LoadingResponse 100) >> getStdGen >>= go g l n
+    load [] g l n _ = sendJSON conn (RespondLoading 100) >> getStdGen >>= go g l n
     load (cmd : cmds) g l n m = do
         let (res, l') = (runState . runGame) g l
-        when (m `mod` 1000 == 0) $ sendJSON conn (LoadingResponse ((m * 100) `div` length sav))
+        when (m `mod` 1000 == 0) $ sendJSON conn (RespondLoading ((m * 100) `div` length sav))
         case res of
             Turn cont   | InputAct act <- cmd -> load cmds (cont act) l' n (m + 1)
             YesNo cont  | InputYN b <- cmd    -> load cmds (cont b) l' n (m + 1)
@@ -107,13 +107,11 @@ evalGame hdl sav conn exitContinuation = load sav initGame defaultLevel 1 0
         let (res, l') = (runState . runGame) g l
         case res of
             Turn cont -> do
-                sendJSON conn (LevelResponse l')
-                message <- recvJSON conn
-
-                putStrLn (show message)
+                sendJSON conn (RespondLevel l')
+                message <- talk conn l'
                 case message of
                     Nothing -> exitContinuation
-                    Just (RequestAct act) -> do 
+                    Just act -> do
                         BS.hPut hdl (S.encode (InputAct act))
                         go (cont act) (clearMessages l') n gen
 
@@ -134,6 +132,14 @@ evalGame hdl sav conn exitContinuation = load sav initGame defaultLevel 1 0
                 go (cont lev) l' n gen'
                 
             Result () -> return ()
+
+talk :: Socket -> Level -> IO (Maybe Action)
+talk conn lev = do
+    message <- recvJSON conn
+    case message of
+        Nothing -> return Nothing
+        Just (RequestInventory l) -> sendJSON conn (RespondInventory l lev) >> talk conn lev
+        Just (RequestAct act) -> return (Just act)
 
 {- ============================================================
    Protocol for sending and receiving JSON data with the client
@@ -173,8 +179,9 @@ recvUntil sock n
   | otherwise = (:) <$> recv sock 4096 <*> recvUntil sock (n - 4096)
 
 -- | Data we send to the client.
-data Response = LevelResponse Level
-              | LoadingResponse Int
+data Response = RespondLevel Level
+              | RespondLoading Int
+              | RespondInventory (Row, Col) Level
 
 responseObject :: (a -> J.Value) -> String -> a -> J.Value 
 responseObject encoder msgType payload = J.object
@@ -189,11 +196,14 @@ entityHpJSON (selfModify -> ent) = J.object
     ]
 
 instance J.ToJSON Response where
-  toJSON (LevelResponse lev) = responseObject (levelToJSON entityHpJSON) "level" lev
-  toJSON (LoadingResponse n) = responseObject J.toJSON "loading" n
+  toJSON (RespondLevel lev) = responseObject (levelToJSON entityHpJSON) "level" lev
+  toJSON (RespondLoading n) = responseObject J.toJSON "loading" n
+  toJSON (RespondInventory l lev) = responseObject id "inventory" (inventoryJSON l lev)
 
 -- | Data we receive from the client.
-data Request = RequestAct Action deriving Show
+data Request = RequestAct Action
+             | RequestInventory (Row, Col)
+             deriving Show
 
 instance J.FromJSON Request where
   parseJSON = J.withObject "message" $ \obj -> do
