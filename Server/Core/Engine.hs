@@ -260,7 +260,6 @@ defaultLevel = Level
 arrayToJSON :: IArray a e => (e -> Char) -> a (Row, Col) e -> J.Value
 arrayToJSON toChar arr@(bounds -> (_, (mr, mc))) = J.Array $ V.generate (mr + 1) textRow
   where
-    
     textRow r = J.String . T.pack $ map (toChar . (!) arr . (,) r) [0..mc]
 
 {- I really thought this would be faster...
