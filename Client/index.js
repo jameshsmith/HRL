@@ -1,6 +1,7 @@
 const net = require('net')
 const fs = require('fs')
 const JsonSocket = require('json-socket')
+const Window = require('./window.js')
 
 var scene, camera, renderer;
 var geometry, material, mesh;
@@ -251,6 +252,9 @@ function keyPressPrime (event) {
 	} else if (event.key === "m") {
 	    var win = document.getElementById("messagebox")
 	    win.style.visibility = "visible"
+	} else if (event.key === "i") {
+	    var win = document.getElementById("inventory")
+	    win.style.visibility = "visible"
 	}
     } else if (chord === "t") {
 	if (event.key === "w") {
@@ -309,8 +313,33 @@ function tbHide (event) {
 }
 
 function start () {
-    init();
-    animate();
+    initUI()
+    
+    init()
+    
+    animate()
+}
+
+function initUI () {
+
+    /* Create the message box */
+    var messages = new Window({
+	title: "Messages",
+	frameId: "messagebox",
+	contentId: "messages"
+    })
+    messages.onClose(function () {
+	messages.frame.style.visibility = "hidden"
+    })
+
+    var spellbook = new Window({
+	title: "Spellbook",
+	frameId: "spellbook",
+	contentId: "spells"
+    })
+    spellbook.onClose(function () {
+	messages.frame.style.visibility = "hidden"
+    })
 }
 
 function camLookAt (r, c) {
@@ -508,6 +537,12 @@ function animate() {
     renderer.render(scene, camera);
  
 }
+
+// =====================================================
+// Temporary Window Management
+// =====================================================
+
+var inventory = {}
 
 // =====================================================
 // Temporary Window Management

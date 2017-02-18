@@ -6,6 +6,30 @@ body {
     color: white;
 }
 
+table {
+    border-spacing: 0px;
+}
+
+td {
+    width: 32px;
+    height: 32px;
+    padding: 3px;
+    text-align: right;
+    font-size: 0.8em;
+    vertical-align: bottom;
+    background: url(ui/igrid.png);
+}
+
+tr:nth-child(even) td:nth-child(odd), tr:nth-child(odd) td:nth-child(even) {
+    background: url(ui/igrid2.png);
+				      }
+
+td img {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+}
+
 .bottombar {
     position:fixed;
     bottom: 0px;
@@ -73,6 +97,17 @@ body {
     width: 500px;
     height: 200px;
     z-index: 0;
+}
+
+#inventory {
+    width: 320px;
+    height: 320px;
+}
+
+#items {
+    height: 100%;
+    background-color: black;
+    border: 1px solid grey;
 }
 
 #messages {

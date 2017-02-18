@@ -8,23 +8,24 @@
     <title>HRL</title>
   </head>
   <body onload="start()" onkeydown="keyPress(event)">
-    <div class="window" id="spellbook">
-      <div class="titlebar" onmousedown="tbMoveStart(event)" onmouseup="tbMoveEnd(event)">
-	<img class="tbleft" src="ui/tbleft.png">
-	Spellbook
-	<img class="tbright" src="ui/tbright.png" onmouseover="tbHideEnter(event)" onmouseleave="tbHideLeave(event)" onmousedown="tbHide(event)">
-      </div>
-      <div id="spells">
-      </div>
-    </div>
     
-    <div class="window" id="messagebox">
+    <div class="window" id="inventory">
       <div class="titlebar" onmousedown="tbMoveStart(event)" onmouseup="tbMoveEnd(event)">
 	<img class="tbleft" src="ui/tbleft.png">
-	Messages
+	Inventory
 	<img class="tbright" src="ui/tbright.png" onmouseover="tbHideEnter(event)" onmouseleave="tbHideLeave(event)" onmousedown="tbHide(event)">
       </div>
-      <div id="messages">
+      <div id="items">
+	<table>
+	  <tr>
+	    <td><img src="ui/item/Longsword +2.png" draggable="true">1</td>
+	    <td>100</td>
+	  </tr>
+	  <tr>
+	    <td>30</td>
+	    <td>22</td>
+	  </tr>
+	</table>
       </div>
     </div>
     
