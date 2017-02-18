@@ -338,7 +338,7 @@ function initUI () {
 	contentId: "spells"
     })
     spellbook.onClose(function () {
-	messages.frame.style.visibility = "hidden"
+	spellbook.frame.style.visibility = "hidden"
     })
 }
 
@@ -543,61 +543,6 @@ function animate() {
 // =====================================================
 
 var inventory = {}
-
-// =====================================================
-// Temporary Window Management
-// =====================================================
-   
-/*
-  Create an empty window of a certain at a location. Returns an empty,
-  unstyled div for the contents of the window.
-*/
-function winCreate (title, x, y, h, w) {
-    var win = document.createElement("div")
-    win.className = "window"
-    win.style.height = h + "px"
-    win.style.width = w + "px"
-    win.style.left = x + "px"
-    win.style.top = y + "px"
-    
-    var tb = document.createElement("div")
-    tb.className = "titlebar"
-    tb.addEventListener("mousedown", tbMoveStart)
-    tb.addEventListener("mouseup", tbMoveEnd)
-    
-    var tbLeft = document.createElement("img")
-    tbLeft.className = "tbleft"
-    tbLeft.src = "ui/tbleft.png"
-    
-    var tbTitle = document.createTextNode(title)
-    
-    var tbRight = document.createElement("img")
-    tbRight.className = "tbright"
-    tbRight.src = "ui/tbright.png"
-    tbRight.addEventListener("mouseenter", function () {
-	tbRight.src = "ui/tbrightc.png"
-    })
-    tbRight.addEventListener("mouseleave", function () {
-	tbRight.src = "ui/tbright.png"
-    })
-    tbRight.addEventListener("mousedown", function (event) {
-	document.body.removeChild(win)
-	event.stopPropagation()
-    })
-
-    tb.appendChild(tbLeft)
-    tb.appendChild(tbTitle)
-    tb.appendChild(tbRight)
-
-    var content = document.createElement("div")
-    
-    win.appendChild(tb)
-    win.appendChild(content)
-    
-    document.body.appendChild(win)
-
-    return content
-}
 
 // =====================================================
 // Spell Management
