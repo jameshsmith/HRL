@@ -27,6 +27,8 @@ import Data.Array.Unboxed (UArray)
 import qualified Data.Lens.Lazy as Lens
 import System.Random
 
+-- TODO: Re-write with Control.Monad.Free
+
 -- | The 'Result' functor represents the ways in which the game monad can suspend itself. It can:
 --
 -- * End the turn requesting a new action from the player, represented by the abstract type @k@.
@@ -109,7 +111,7 @@ noTurn m = Game $ do
         Dice n cont -> return $ Dice n (noTurn . cont)
         Gen g cont  -> return $ Gen g (noTurn . cont)
         Result x    -> return $ Result x
-
+     
 rollMinMax :: ((Int, Int) -> Int) -> Game k l a -> Game k l a
 rollMinMax f m = Game $ do
     res <- runGame m

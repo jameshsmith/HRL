@@ -27,6 +27,7 @@ import Control.Arrow ((&&&))
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 import Control.Monad
+import Control.Monad.Free
 import Data.Monoid ((<>))
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -64,6 +65,12 @@ fizzleEffect = Effect Nothing (Ana (\s -> lift (message s) >> mzero) "*Fizzle*")
 simpleEffect :: Game () Level () -> Effect
 simpleEffect m = Effect Nothing (Ana (\_ -> lift m >> mzero) ())
 
+fixFree :: Monad m => Free m () -> Fix (MaybeT m)
+fixFree = Ana go
+ where
+   go (Pure ())   = mzero
+   go (Free cont) = lift cont
+
 fireblast :: Spell
 fireblast = Spell "Fireblast" . Actor $ \aref -> simpleEffect (fireblast' aref)
 
@@ -86,18 +93,11 @@ luckCurse' ref s
   | Just (n, m) <- s = return (Just (n - 1, m))
 
 timetwister :: Spell
-timetwister = Spell "Timetwister" (None (Effect Nothing (Ana timetwister' Nothing)))
+timetwister = Spell "Timetwister" (None (Effect Nothing (fixFree timetwister')))
 
-timetwister' :: Maybe (Int, Level) -> MaybeT (Game k Level) (Maybe (Int, Level))
-timetwister' s
-  | Nothing     <- s = lift $ do
-      l <- level
-      message ("Temporal reset in: 10")
-      return (Just (9, l))
-
-  | Just (n, l) <- s
-  , n == 0           = lift (unsafeWeakLens id != l) >> mzero
-
-  | Just (n, l) <- s = lift $ do
-      message ("Temporal reset in: " <> T.pack (show n))
-      return (Just (n - 1, l))
+timetwister' :: Free (Game k Level) ()
+timetwister' = do
+    l <- liftF (message "Temporal reset in 10" >> level)
+    forM_ [9, 8..1] $ \n ->
+        liftF (message ("Temporal reset in " <> T.pack (show n)))
+    liftF (unsafeWeakLens id != l)

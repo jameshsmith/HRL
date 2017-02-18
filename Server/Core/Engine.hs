@@ -260,7 +260,13 @@ defaultLevel = Level
 arrayToJSON :: IArray a e => (e -> Char) -> a (Row, Col) e -> J.Value
 arrayToJSON toChar arr@(bounds -> (_, (mr, mc))) = J.Array $ V.generate (mr + 1) textRow
   where
+    
     textRow r = J.String . T.pack $ map (toChar . (!) arr . (,) r) [0..mc]
+
+{- I really thought this would be faster...
+    textRow2 r = J.String $ flip (T.unfoldrN (mc + 1)) 0 $ \c ->
+        if c > mc then Nothing else Just (toChar (arr ! (r, c)), c + 1)
+-}
 
 actorToJSON entityToJSON actor = J.object
   [ ("row", J.toJSON . fst $ _aloc actor)
