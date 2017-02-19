@@ -158,9 +158,9 @@ td img {
     width: 100%;
     background: black;
     height:34px;
-    line-height: 23px;
+    vertical-align: center;
     position: relative;
-     background-image: url("ui/bookentry.png");
+    background-image: url("ui/bookentry.png");
     background-repeat: repeat-x;
 }
 
@@ -172,12 +172,13 @@ td img {
     position: absolute;
 }
 
-.bookentry div {
-    top: 5px;
+.bookentry .name {
     left: 40px;
+    line-height: 32px;
     height: 32px;
     position: absolute;
 }
+
 
 #spellbook {
     height: 400px;
@@ -193,6 +194,36 @@ td img {
     left: 0px;
     z-index: -1;
 }
+
+.tooltip {
+    background: black;
+    padding: 5px;
+    position: absolute;
+    border: 2px solid #3d5f9e;
+    border-radius: 10px;
+    height: auto;
+    opacity: 0.8;
+    z-index: 50;
+    visibility: hidden;
+}
+
+.tooltip::after {
+    content: " ";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent #3d5f9e transparent;
+}
+
+@keyframes fadein {
+    0%   { opacity: 0; }
+    50%  { opacity: 0; } 
+    100% { opacity: 0.8; }
+}
+
 
 ::-webkit-scrollbar {
     width: 12px;

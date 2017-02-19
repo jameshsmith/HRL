@@ -2,6 +2,7 @@ const net = require('net')
 const fs = require('fs')
 const JsonSocket = require('json-socket')
 const Window = require('./window.js')
+const tooltip = require('./tooltip.js')
 
 var scene, camera, renderer;
 var geometry, material, mesh;
@@ -271,47 +272,6 @@ function keyPressPrime (event) {
     }
 }
 
-// =====================================================
-// Dragging Windows and Titlebars
-// =====================================================
-
-var dragWindow
-
-function tbMove (event) {
-    dragWindow.style.left = event.pageX + dragWindow.dragOffX + "px"
-    dragWindow.style.top = event.pageY + dragWindow.dragOffY + "px"
-}
-
-function tbMoveStart (event) {
-    dragWindow = event.target.parentNode
-    var rect = dragWindow.getBoundingClientRect()
-    
-    dragWindow.dragOffX = rect.left - event.pageX
-    dragWindow.dragOffY = rect.top - event.pageY
-    
-    document.addEventListener("mousemove", tbMove)
-}
-
-function tbMoveEnd (event) {
-    document.removeEventListener("mousemove", tbMove)
-}
-
-function tbHideEnter (event) {
-    event.target.src="ui/tbrightc.png"
-}
-
-function tbHideLeave (event) {
-    event.target.src="ui/tbright.png"
-}
-
-function tbHide (event) {
-    var win = event.target.closest(".window")
-    console.log(win)
-    win.style.visibility = "hidden"
-    
-    event.stopPropagation()
-}
-
 function start () {
     initUI()
     
@@ -322,7 +282,6 @@ function start () {
 
 function initUI () {
 
-    /* Create the message box */
     var messages = new Window({
 	title: "Messages",
 	frameId: "messagebox",
@@ -559,14 +518,16 @@ function populateSpellbook () {
     for (var s in spellbook) {
 	var entry = document.createElement("div")
 	entry.className = "bookentry"
-
+	tooltip(entry, "This is a spell")
+	
 	var img = document.createElement("img")
 	img.src = "ui/spell/" + spellbook[s] + ".png"
 	img.alt = spellbook[s]
 	img.draggable = true
 	img.addEventListener("dragstart", spellDrag)
 	img.addEventListener("dragend", spellDragEnd)
-
+	tooltip(img, "This is a spell")
+	
 	var name = document.createElement("div")
 	name.className = "name"
 	name.innerHTML = spellbook[s]

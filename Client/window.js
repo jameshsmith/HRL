@@ -21,7 +21,7 @@ function tbMoveStart (event) {
     document.addEventListener("mouseup", tbMoveEnd)
 }
 
-module.exports = function(settings) {
+module.exports = function (settings) {
     /* Create the frame div */
     var win = document.createElement("div")
     win.className = "window"
