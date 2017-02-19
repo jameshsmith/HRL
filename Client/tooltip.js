@@ -10,7 +10,6 @@ module.exports = function (div, content) {
 
 	tip.style.left = "0px"
 	tip.style.top = rect.bottom - rect.top + "px"
-	/* tip.style.zIndex = parseInt(div.style.zIndex) + 1 */
 	tip.style.animation = "fadein 1s"
 	tip.style.visibility = "visible"
     })
