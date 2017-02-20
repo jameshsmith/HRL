@@ -46,6 +46,9 @@ module.exports = function () {
     sortButton.addEventListener("mouseout", function () {
 	sortButton.src = "ui/isort.png"
     })
+    sortButton.addEventListener("click", function () {
+	sort()
+    })
     controls.appendChild(sortButton)
     
     window.content.appendChild(controls)
@@ -66,10 +69,10 @@ module.exports = function () {
 
     // Returns the first free slot in the items array. Expanding the
     // visual representation of the array as neccessary
-    this.freeSlot = function () {
+    function freeSlot () {
 	var free = -1
 	
-	for (var i = 0; i < items.length; i++) {
+	for (var i = 0; i < items.length && free === -1; i++) {
 	    if (items[i] === undefined || items[i] === null) {
 		free = i
 	    }
@@ -95,13 +98,14 @@ module.exports = function () {
 
 	return free
     }
+    this.freeSlot = freeSlot
 
-    this.splitstack = function (loc, number) {
+    this.splitStack = function (loc, number) {
 	if (items[loc] !== null && items[loc] !== undefined) {
 	    if (items[loc].count > number) {
 		items[loc].count -= number
 		
-		var newLoc = this.freeSlot()
+		var newLoc = freeSlot()
 
 		items[newLoc] = {
 		    name: items[loc].name,
@@ -109,18 +113,19 @@ module.exports = function () {
 		}
 		imap[items[loc].name].push(newLoc)
 
-		this.refreshAt(loc)
-		this.refreshAt(newLoc)
+		refreshAt(loc)
+		refreshAt(newLoc)
 	    }
 	}
     }
 
-    this.update = function (patch) {
+    function update (patch) {
 	var changes = 0
+	var keyDels = 0
 	
 	for (var i in Object.keys(imap)) {
 	    // They object exists in the patch
-	    var key = Object.keys(imap)[i]
+	    var key = Object.keys(imap)[i - keyDels]
 
 	    if (patch[key] !== undefined) {
 		var itemCount = 0
@@ -162,6 +167,7 @@ module.exports = function () {
 		}
 		
 		delete imap[key]
+		keyDels++
 		delete patch[key]
 		console.log("Remove all " + key)
 		changes++
@@ -172,7 +178,7 @@ module.exports = function () {
 	for (var i in Object.keys(patch)) {
 	    key = Object.keys(patch)[i]
 
-	    var loc = this.freeSlot()
+	    var loc = freeSlot()
 	    items[loc] = {
 		name: key,
 		count: patch[key]
@@ -185,13 +191,33 @@ module.exports = function () {
 
 	if (changes > 0) {
 	    for (var i = 0; i < uiRows * 8; i++) {
-		this.refreshAt(i)
+		refreshAt(i)
 	    }
 	}
 	console.log("Changes made to inventory: " + changes)
     }
+    this.update = update
 
-    this.refreshAt = function (n) {
+    function sort () {
+	var patch = {}
+	
+	for (var i in Object.keys(imap)) {
+	    var key = Object.keys(imap)[i]
+
+	    var itemCount = 0
+	    for (var j = 0; j < imap[key].length; j++) {
+		itemCount += items[imap[key][j]].count
+	    }
+
+	    patch[key] = itemCount
+	}
+
+	update({})
+	update(patch)
+    }
+    this.sort = sort
+
+    function refreshAt (n) {
 	var td = document.querySelectorAll("#items td")[n]
 
 	while(td.hasChildNodes()) {
