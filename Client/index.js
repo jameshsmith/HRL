@@ -1,9 +1,16 @@
 const net = require('net')
 const fs = require('fs')
 const JsonSocket = require('json-socket')
+
 const Window = require('./window.js')
 const tooltip = require('./tooltip.js')
+
 const Spellbook = require('./spellbook.js')
+var spellbook = {}
+
+const Inventory = require('./inventory.js')
+var inventory = {}
+
 const Level = require('./level.js')
 var level = {}
 
@@ -108,6 +115,7 @@ function initUI () {
     })
 
     spellbook = new Spellbook()
+    inventory = new Inventory()
 }
 
 function initTHREE() {

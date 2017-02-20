@@ -11,23 +11,32 @@ table {
 }
 
 td {
+    padding: 3px;
     width: 32px;
     height: 32px;
-    padding: 3px;
     text-align: right;
     font-size: 0.8em;
     vertical-align: bottom;
     background: url(ui/igrid.png);
+    position: relative;
+}
+
+td:hover {
+    background: url(ui/igridh.png);
 }
 
 tr:nth-child(even) td:nth-child(odd), tr:nth-child(odd) td:nth-child(even) {
     background: url(ui/igrid2.png);
-				      }
+}
+
+tr:nth-child(even) td:nth-child(odd):hover, tr:nth-child(odd) td:nth-child(even):hover {
+    background: url(ui/igrid2h.png);
+}
 
 td img {
     position: absolute;
-    left: 4px;
-    top: 4px;
+    left: 3px;
+    top: 3px;
 }
 
 .bottombar {
@@ -104,10 +113,28 @@ td img {
     height: 320px;
 }
 
+#inventorycontrols {
+    height: 20px;
+    background: url(ui/icontrols.png);
+}
+
+#inventorycontrols img {
+    padding-top: 1px;
+    padding-left: 3px;
+}
+
+#itemgrid {
+    height: 300px;
+    overflow-y: scroll;
+}
+
 #items {
     height: 100%;
+    width: 100%;
     background-color: black;
     border: 1px solid grey;
+    position: absolute;
+    left: -1px;
 }
 
 #messages {
@@ -133,7 +160,6 @@ td img {
     line-height: 23px;
     background-color: grey;
     background-image: url("ui/titlebar.png");
-    /* background-repeat: repeat-y; */
     color: white;
     text-align: center;
     text-shadow: 2px 2px 5px black;
