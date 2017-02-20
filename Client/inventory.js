@@ -1,7 +1,7 @@
 "use strict"
 
-const Window = require('./window.js')
-const tooltip = require('./tooltip.js')
+const Window = require("./window.js")
+const tooltip = require("./tooltip.js")
 
 /* Create the inventory grid as an 4x8 table. Returns an object such
  * that object.grid is an 4x8 array of <td> elements and object.table
