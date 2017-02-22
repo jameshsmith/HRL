@@ -3,6 +3,7 @@ module Core.DijkstraMap
     ( DijkstraMap
     , mkDijkstraMap
     , downhill
+    , unDMap
     ) where
 
 import Prelude hiding ((.), id)
@@ -15,7 +16,8 @@ import Data.Array.ST
 import Data.List (sortOn, nub)
 import Data.Maybe
 
-newtype DijkstraMap = DMap (UArray (Row, Col) Word) deriving (Eq, Show)
+newtype DijkstraMap =
+    DMap { unDMap :: (UArray (Row, Col) Word) } deriving (Eq, Show)
 
 -- | Make a Dijkstra map from some list of goal tiles and an array of
 -- solid/non-navigable tiles.

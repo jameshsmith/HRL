@@ -4,6 +4,13 @@
 module Core.BPS
     ( preProcess
     , pathfind
+    , pathfind2
+    , pathfind'
+    , startHeap
+    , astar
+    , astar'
+    , astarStartHeap
+    , Path (..)
     ) where
 
 import Prelude hiding ((.), id)
@@ -11,6 +18,7 @@ import Prelude hiding ((.), id)
 import Core.Types
 
 import Control.Monad
+import Control.Monad.ST
 import Data.Array.Unboxed
 import Data.Array.ST
 import Data.Bits
@@ -21,6 +29,14 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Heap (Heap, Entry)
 import qualified Data.Heap as Heap
+
+-- Some ideas for improvements:
+--
+-- 1: Can we mark nodes we just walk over as visited? Might help in
+-- some pathological cases?
+
+-- 2: Try replacing storing the path in the Heap with a mutable
+-- copy of the UArray in the ST monad
 
 dirBit :: Dir4 -> Word16
 dirBit N4 = bit 0
@@ -198,18 +214,6 @@ intersect d (r1, c1) (r2, c2)
   | d == N4 || d == S4 = r1 == r2
   | otherwise          = c1 == c2
 
-walk :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Dir4 -> (Row, Col)
-walk solid dest p d
-  | d `into` (solid ! move4 d p) > 0 || intersect d dest (move4 d p) = move4 d p
-  | otherwise = walk solid dest (move4 d p) d
-
-startHeap :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Heap (Entry Int Path)
-startHeap solid start dest = heap
-  where
-    startEntry d p = Heap.Entry (manhattan dest p + manhattan start p) (Path (manhattan start p) d [p, start])
-
-    heap = Heap.fromList (startEntry <*> walk solid dest start <$> open (solid ! start))
-
 entry :: Set (Row, Col)
       -> Path
       -> (Row, Col)
@@ -225,6 +229,16 @@ entry visited path dest from d to
 
 type Visited = Set (Row, Col)
 
+run :: (a -> Either b a) -> a -> b
+run f x = case f x of
+    (Left result) -> result
+    (Right x')    -> run f x'
+
+walk :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Dir4 -> (Row, Col)
+walk solid dest p d
+  | d `into` (solid ! move4 d p) > 0 || intersect d dest (move4 d p) = move4 d p
+  | otherwise = walk solid dest (move4 d p) d
+
 pathfind' :: UArray (Row, Col) Word16
           -> (Row, Col)
           -> (Visited, Heap (Entry Int Path))
@@ -236,7 +250,7 @@ pathfind' solid dest (visited, Heap.viewMin -> Just (Heap.Entry priority path, h
       let p = head (nodes path)
           w = solid ! p
           h = hook (dir path) w
-          newHeap dirs = Heap.fromList ((entry visited path dest p <*> walk solid dest p) `mapMaybe` dirs)
+          newHeap dirs = Heap.fromList (mapMaybe (entry visited path dest p <*> walk solid dest p) dirs)
       in if | Set.member p visited ->
                 pathfind' solid dest (visited, heap)
             | w .&. dirBit (dir path) > 0 ->
@@ -250,10 +264,100 @@ pathfind' solid dest (visited, Heap.viewMin -> Just (Heap.Entry priority path, h
             | otherwise ->
                 Right $ (Set.insert p visited, heap `Heap.union` newHeap (openFrom (dir path) w))
 
-run :: (a -> Either b a) -> a -> b
-run f x = case f x of
-    (Left result) -> result
-    (Right x')    -> run f x'
+type STV s = STUArray s (Row, Col) Bool
+
+entryST :: STV s
+        -> Path
+        -> (Row, Col)
+        -> (Row, Col)
+        -> Dir4
+        -> (Row, Col)
+        -> ST s (Maybe (Entry Int Path))
+entryST visited path dest from d to = do
+    vis <- readArray visited to
+    return $ if vis then Nothing else Just $
+        Heap.Entry (distance path + manhattan from to + manhattan to dest)
+          (Path (distance path + manhattan from to) d (to : nodes path))
+
+
+pathfindSTV :: UArray (Row, Col) Word16
+            -> (Row, Col)
+            -> STV s
+            -> Heap (Entry Int Path)
+            -> ST s (Either (Maybe Path) (Heap (Entry Int Path)))
+pathfindSTV _     _    _       (Heap.viewMin -> Nothing) = return $ Left Nothing
+pathfindSTV solid dest visited (Heap.viewMin -> Just (Heap.Entry priority path, heap))
+  | priority == distance path = return $ Left (Just path)
+  | otherwise = do
+      let p = head (nodes path)
+      vis <- readArray visited p
+      if vis then pathfindSTV solid dest visited heap else do
+          let w = solid ! p
+              h = hook (dir path) w
+          writeArray visited p True
+          if | w .&. dirBit (dir path) > 0 -> do
+                 heap' <- newHeap (openFrom (dir path) w) p
+                 return . Right $ heap `Heap.union` heap'
+             | h == 1 -> do
+                 heap' <- newHeap [dir path, clock (dir path)] p
+                 return . Right $ heap `Heap.union` heap'
+             | h == 2 -> do
+                 heap' <- newHeap [dir path, anticlock (dir path)] p
+                 return . Right $ heap `Heap.union` heap'
+             | h == 3 -> do
+                 heap' <- newHeap [dir path, clock (dir path), anticlock (dir path)] p
+                 return . Right $ heap `Heap.union` heap'
+             | otherwise -> do
+                 heap' <- newHeap (openFrom (dir path) w) p
+                 return . Right $ heap `Heap.union` heap'
+  where
+    newHeap dirs p =
+        Heap.fromList . catMaybes <$> sequence (map (entryST visited path dest p <*> walk solid dest p) dirs)
+
+runSTV :: (a -> ST s (Either b a)) -> a -> ST s b
+runSTV f x = do
+    x' <- f x
+    case x' of
+      (Left result) -> return result
+      (Right x'')   -> runSTV f x''
+
+startHeap :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Heap (Entry Int Path)
+startHeap solid start dest = Heap.fromList (startEntry <*> walk solid dest start <$> open (solid ! start))
+  where
+    startEntry d p = Heap.Entry (manhattan dest p + manhattan start p) (Path (manhattan start p) d [p, start])
+
 
 pathfind :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Maybe Path
 pathfind solid start dest = run (pathfind' solid dest) (Set.insert start Set.empty, startHeap solid start dest)
+
+pathfind2 :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Maybe Path
+pathfind2 solid start dest = runST $ do
+  visited <- newArray (bounds solid) False
+  writeArray visited start True
+  runSTV (pathfindSTV solid dest visited) (startHeap solid start dest)
+
+
+-- Implementation of A*, for reference:
+
+astar' :: UArray (Row, Col) Bool
+       -> (Row, Col)
+       -> (Visited, Heap (Entry Int Path))
+       -> Either (Maybe Path) (Visited, (Heap (Entry Int Path)))
+astar' _      _    (_, Heap.viewMin -> Nothing) = Left Nothing
+astar' solid dest (visited, Heap.viewMin -> Just (Heap.Entry priority path, heap))
+  | priority == distance path = Left (Just path)
+  | otherwise =
+      let p = head (nodes path)
+          w = adjacency solid p
+          newHeap dirs = Heap.fromList (mapMaybe (entry visited path dest p <*> flip move4 p) dirs)
+      in if Set.member p visited
+         then astar' solid dest (visited, heap)
+         else Right $ (Set.insert p visited, heap `Heap.union` newHeap (openFrom (dir path) w))
+
+astarStartHeap :: UArray (Row, Col) Bool -> (Row, Col) -> (Row, Col) -> Heap (Entry Int Path)
+astarStartHeap solid start dest = Heap.fromList . map heapEntry $ open (adjacency solid start)
+  where
+    heapEntry d | p <- move4 d start = Heap.Entry (1 + manhattan p dest) (Path 1 d [p, start])
+
+astar :: UArray (Row, Col) Bool -> (Row, Col) -> (Row, Col) -> Maybe Path
+astar solid start dest = run (astar' solid dest) (Set.insert start Set.empty, astarStartHeap solid start dest)

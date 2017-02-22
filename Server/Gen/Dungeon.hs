@@ -1,5 +1,5 @@
 {-# LANGUAGE ViewPatterns #-}
-module Gen.Dungeon (plainRoom, printDungeon, dungeonGen) where
+module Gen.Dungeon (plainRoom, printDungeon, dungeonGen, dungeonGen') where
 
 import Core.Types
 import Core.ZArray
@@ -201,6 +201,13 @@ dungeonGen rooms = do
     let zeros = listArray ((0, 0), (19, 19)) (repeat 0)
     tiles <- cellularize <$> (maze =<< placeRooms 1 (map roomSize rooms) zeros)
     let barr = asZArray removeDeadEnds $ (fmap tileToChar tiles) // concat (zipWith roomUpdates (corners tiles) rooms)
+    return $ array (U.bounds barr) (U.assocs barr)
+
+dungeonGen' :: [[[Char]]] -> (Row, Col) -> State StdGen (UArray (Row, Col) Char)
+dungeonGen' rooms (mR, mC) = do
+    let zeros = listArray ((0, 0), (mR, mC)) (repeat 0)
+    tiles <- cellularize <$> (maze =<< placeRooms 1 (map roomSize rooms) zeros)
+    let barr = (fmap tileToChar tiles) // concat (zipWith roomUpdates (corners tiles) rooms)
     return $ array (U.bounds barr) (U.assocs barr)
     
 z4 :: ZArray (Row, Col) e -> [e]
