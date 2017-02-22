@@ -8,7 +8,7 @@ module Core.Types
   , (:~>), unsafeWeakLens, weak, (<#)
   , Dir4 (..)
   , Dir8 (..)
-  , move4, opposite4, manhattan
+  , move4, opposite4, manhattan, clock, anticlock
   , (?)
   , ix, ixD
   -- * Functor fixpoints and anamorphisms
@@ -130,6 +130,18 @@ opposite4 W4 = E4
 -- | The manhattan (taxicab) distance between two locations.
 manhattan :: (Row, Col) -> (Row, Col) -> Int
 manhattan (r1, c1) (r2, c2) = abs (r1 - r2) + abs (c1 - c2)
+
+clock :: Dir4 -> Dir4
+clock N4 = E4
+clock E4 = S4
+clock S4 = W4
+clock W4 = N4
+
+anticlock :: Dir4 -> Dir4
+anticlock N4 = W4
+anticlock E4 = N4
+anticlock S4 = E4
+anticlock W4 = S4
 
 (?) :: (IArray a e, Ix i) => a i e -> i -> Maybe e
 arr ? i | bounds arr `inRange` i = Just (arr ! i)

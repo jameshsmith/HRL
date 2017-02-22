@@ -3,9 +3,8 @@
 const Window = require("./window.js")
 const tooltip = require("./tooltip.js")
 
-/* Create the inventory grid as an 4x8 table. Returns an object such
- * that object.grid is an 4x8 array of <td> elements and object.table
- * is a <div> containing the <table> element. */
+/* Create the inventory grid as an r by 8 table. Returns a <div>
+ * containing the <table> element. */
 function createGrid (r) {
     var tableContainer = document.createElement("div")
     tableContainer.id = "itemgrid"

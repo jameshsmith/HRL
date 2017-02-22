@@ -35,6 +35,7 @@ executable HRL
                  transformers >=0.5 && <0.6,
                  vector >= 0.11.0.0,
                  zlib >=0.6 && <0.7,
-                 free >=4.12 && <4.13
+                 free >=4.12 && <4.13,
+                 heaps >=0.3 && <0.4
   -- hs-source-dirs:      
   default-language: Haskell2010
