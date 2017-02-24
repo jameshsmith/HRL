@@ -39,18 +39,12 @@ main = do
     putStrLn (show (astar d1 start dest))
     putStrLn "=== BPS Path ==="
     putStrLn (show (pathfind d2 start dest))
-    putStrLn "=== BPS ST Path ==="
-    putStrLn (show (pathfind2 d2 start dest))
-    putStrLn "=== BPS2 Path ==="
-    putStrLn (show (pathfind3 d2 start dest))
     putStrLn "=== Dijkstra Floodfill ==="
     putStrLn (show (unDMap (mkDijkstraMap [(dest)] d1) ! start))
     defaultMain
         [ bgroup "pathfinding"
            [ bench "A*" $ whnf (astar d1 start) dest
            , bench "BPS" $ whnf (pathfind d2 start) dest
-           , bench "BPS in ST" $ whnf (pathfind2 d2 start) dest
-           , bench "BPS2" $ whnf (pathfind3 d2 start) dest
            , bench "BPS precompute step" $ whnf preProcess d1
            , bench "DijkstraMap" $ whnf (mkDijkstraMap [(dest)]) d1
            ]
