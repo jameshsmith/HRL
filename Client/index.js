@@ -127,7 +127,12 @@ function initTHREE() {
 
     var textureLoader = new THREE.TextureLoader()
     
-    level = new Level(camera, textureLoader)
+    var ambLight = new THREE.AmbientLight(0x505050);
+    scene.add(ambLight);
+    
+    playerLight = new THREE.PointLight(0xFFCC66, 1.5, 600)
+    
+    level = new Level(camera, textureLoader, playerLight)
 
     var texSelection = textureLoader.load('textures/ui/select.png')
     texSelection.magFilter = THREE.NearestFilter
@@ -142,7 +147,7 @@ function initTHREE() {
 
     scene.add(selection)
     scene.add(level.group)
- 
+    
     renderer = new THREE.WebGLRenderer()
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.domElement.id = "canvas"
@@ -187,5 +192,9 @@ function animate() {
     camera.position.x += 0
     camera.position.z += 0
 
-    renderer.render(scene, camera);
+    var d = new Date()
+
+    playerLight.intensity = 1 + Math.sin(d.getTime() / 500) / 5
+    
+    renderer.render(scene, camera)
 }

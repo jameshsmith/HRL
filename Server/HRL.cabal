@@ -16,7 +16,8 @@ executable HRL
   main-is: Main.hs
   -- other-modules:       
   other-extensions: LambdaCase, TypeOperators, GADTs, FlexibleContexts, TupleSections, OverloadedStrings, MultiWayIf, ExistentialQuantification, GeneralizedNewtypeDeriving, ViewPatterns
-  ghc-options: -O2 -W -fprof-auto "-with-rtsopts=-p -s -h -i0.1"
+  ghc-options: -O2
+               -- -W -fprof-auto "-with-rtsopts=-p -s -h -i0.1"
   build-depends: QuickCheck >=2.9 && <2.10,
                  aeson >= 1.1 && <1.2,
                  array >=0.5 && <0.6,

@@ -30,9 +30,11 @@ function levelLookAt (camera, r, c) {
     camera.position.z -= (lZ - tZ)
 }
 
-module.exports = function (camera, textureLoader) {
+module.exports = function (camera, textureLoader, playerLight) {
     this.group = new THREE.Group()
 
+    this.group.add(playerLight)
+    
     /* ==================================================
        Structures to hold the levels objects
        ================================================== */
@@ -66,9 +68,9 @@ module.exports = function (camera, textureLoader) {
 	tex.magFilter = THREE.NearestFilter
 	tex.minFilter = THREE.NearestFilter
 
-	var visibleMat = new THREE.MeshBasicMaterial({map: tex})
+	var visibleMat = new THREE.MeshLambertMaterial({map: tex})
 	var seenMat = new THREE.MeshBasicMaterial({map: tex})
-	seenMat.color = new THREE.Color(0x303030)
+	seenMat.color = new THREE.Color(0x202020)
 	
 	visibleMats[files[i]] = visibleMat
 	seenMats[files[i]] = seenMat
@@ -140,6 +142,13 @@ module.exports = function (camera, textureLoader) {
 	actorMats[files[i]] = actorMat
     }
 
+    var tex = textureLoader.load('textures/special/pentagram.png')
+    tex.magFilter = THREE.NearestFilter
+    tex.minFilter = THREE.NearestFilter
+
+    visibleMats['pentagram.png'] = new THREE.MeshBasicMaterial({map: tex, transparent: true})
+    seenMats['pentagram.png'] = new THREE.MeshBasicMaterial({map: tex, transparent: true})
+
     /* ==================================================
        Load the geometries for the level
        ================================================== */
@@ -171,6 +180,18 @@ module.exports = function (camera, textureLoader) {
 	} else if (chr === ' ') {
 	    obj = new THREE.Mesh(geoFloor, mats['floor.png'])
 	    obj.position.set(64 * c, 0, 64 * r)
+	    obj.userData.chr = chr
+	} else if (chr === '*') {
+	    var mesh1 = new THREE.Mesh(geoFloor, mats['floor.png'])
+	    mesh1.position.set(64 * c, 0, 64 * r)
+	    var mesh2 = new THREE.Mesh(geoFloor, mats['pentagram.png'])
+	    mesh2.position.set(64 * c, 0.1, 64 * r)
+	    mesh2.scale.set(5,1,5)
+	    mesh2.renderOrder = -1
+	    var light = new THREE.PointLight(0xAA0000, 2, 300)
+	    light.position.set(64 * c, 0.2, 64 * r)
+	    obj = new THREE.Group()
+	    obj.add(mesh1, mesh2, light)
 	    obj.userData.chr = chr
 	} else if (chr === '+') {
 	    var mesh1 = new THREE.Mesh(geoDoor, mats['doorclosed.box'])
@@ -283,6 +304,7 @@ module.exports = function (camera, textureLoader) {
 
 	    if (meshA.userData.chr === '@') {
 		levelLookAt(camera, act.row, act.col)
+		playerLight.position.set(act.col * 64, 32, act.row * 64)
 	    }
 	    
 	    if (isHash(message.visible[act.row].charAt(act.col))) {

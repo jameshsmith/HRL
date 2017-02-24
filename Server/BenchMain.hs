@@ -48,6 +48,7 @@ main = do
            [ bench "A*" $ whnf (astar d1 start) dest
            , bench "BPS" $ whnf (pathfind d2 start) dest
            , bench "BPS in ST" $ whnf (pathfind2 d2 start) dest
+           , bench "BPS precompute step" $ whnf preProcess d1
            , bench "DijkstraMap" $ whnf (mkDijkstraMap [(dest)]) d1
            ]
         ]

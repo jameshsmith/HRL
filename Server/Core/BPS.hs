@@ -284,10 +284,10 @@ pathfindSTV :: UArray (Row, Col) Word16
             -> (Row, Col)
             -> STV s
             -> Heap (Entry Int Path)
-            -> ST s (Either (Maybe Path) (Heap (Entry Int Path)))
-pathfindSTV _     _    _       (Heap.viewMin -> Nothing) = return $ Left Nothing
+            -> ST s (Maybe Path)
+pathfindSTV _     _    _       (Heap.viewMin -> Nothing) = return Nothing
 pathfindSTV solid dest visited (Heap.viewMin -> Just (Heap.Entry priority path, heap))
-  | priority == distance path = return $ Left (Just path)
+  | priority == distance path = return $ Just path
   | otherwise = do
       let p = head (nodes path)
       vis <- readArray visited p
@@ -297,29 +297,22 @@ pathfindSTV solid dest visited (Heap.viewMin -> Just (Heap.Entry priority path, 
           writeArray visited p True
           if | w .&. dirBit (dir path) > 0 -> do
                  heap' <- newHeap (openFrom (dir path) w) p
-                 return . Right $ heap `Heap.union` heap'
+                 pathfindSTV solid dest visited $ heap `Heap.union` heap'
              | h == 1 -> do
                  heap' <- newHeap [dir path, clock (dir path)] p
-                 return . Right $ heap `Heap.union` heap'
+                 pathfindSTV solid dest visited $ heap `Heap.union` heap'
              | h == 2 -> do
                  heap' <- newHeap [dir path, anticlock (dir path)] p
-                 return . Right $ heap `Heap.union` heap'
+                 pathfindSTV solid dest visited $ heap `Heap.union` heap'
              | h == 3 -> do
                  heap' <- newHeap [dir path, clock (dir path), anticlock (dir path)] p
-                 return . Right $ heap `Heap.union` heap'
+                 pathfindSTV solid dest visited $ heap `Heap.union` heap'
              | otherwise -> do
                  heap' <- newHeap (openFrom (dir path) w) p
-                 return . Right $ heap `Heap.union` heap'
+                 pathfindSTV solid dest visited $ heap `Heap.union` heap'
   where
     newHeap dirs p =
         Heap.fromList . catMaybes <$> sequence (map (entryST visited path dest p <*> walk solid dest p) dirs)
-
-runSTV :: (a -> ST s (Either b a)) -> a -> ST s b
-runSTV f x = do
-    x' <- f x
-    case x' of
-      (Left result) -> return result
-      (Right x'')   -> runSTV f x''
 
 startHeap :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Heap (Entry Int Path)
 startHeap solid start dest = Heap.fromList (startEntry <*> walk solid dest start <$> open (solid ! start))
@@ -334,7 +327,7 @@ pathfind2 :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Maybe Path
 pathfind2 solid start dest = runST $ do
   visited <- newArray (bounds solid) False
   writeArray visited start True
-  runSTV (pathfindSTV solid dest visited) (startHeap solid start dest)
+  pathfindSTV solid dest visited (startHeap solid start dest)
 
 
 -- Implementation of A*, for reference:

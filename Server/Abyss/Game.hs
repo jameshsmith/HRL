@@ -122,17 +122,29 @@ instance S.Serialize Action where
 rooms :: [(Int, Int)]
 rooms = [(6,7),(6,5),(4,4),(3,4),(4,2)] ++ concat (repeat [(3,3),(2,2),(2,2),(2,1)])
 
+ritualChamber = [ "###+#+###"
+                , "#       #"
+                , "#       #"
+                , "#       #"
+                , "#   *   #"
+                , "#       #"
+                , "#       #"
+                , "#       #"
+                , "###+#+###"
+                ]
+                  
+
 initStatic :: Bool -> (Char, ECS.Entity)
 initStatic True = ('#', setL ECS.lens (Name "Wall") ECS.empty)
 initStatic False = (' ', setL ECS.lens (Name "Floor") ECS.empty)
 
 initGame :: Game Action Level ()
 initGame = do
-    layout <- generate (dungeonGen (map plainRoom rooms))
+    layout <- generate (dungeonGen (ritualChamber : map plainRoom rooms))
 
     actor player != Name "Player"
 
-    let s = amap (/= ' ') layout
+    let s = amap (\s -> s /= ' ' && s /= '*') layout
     solid != s
     opacity != s
     seen != listArray (bounds s) (repeat False)
@@ -148,11 +160,15 @@ initGame = do
     forM [1..10] $ \_ -> void $ spawn freeSpot (Egg 'Z' White zombie)
 
     let doors = filter ((== '+') . snd) (assocs layout)
-
+    
     forM_ doors $ \(d, _) -> do
         staticChar d != '+'
         static d != door
         static d != Name "door"
+
+    let rituals = filter ((== '*') . snd) (assocs layout)
+    forM_ rituals $ \(d, _) -> do
+        staticChar d != '*'
     
     game
 
