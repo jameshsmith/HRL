@@ -5,6 +5,7 @@ module Core.BPS
     ( preProcess
     , pathfind
     , pathfind2
+    , pathfind3
     , pathfind'
     , startHeap
     , astar
@@ -239,6 +240,31 @@ walk solid dest p d
   | d `into` (solid ! move4 d p) > 0 || intersect d dest (move4 d p) = move4 d p
   | otherwise = walk solid dest (move4 d p) d
 
+pathfindU :: UArray (Row, Col) Word16
+          -> (Row, Col)
+          -> (Visited, Heap (Entry Int Path))
+          -> Maybe Path
+pathfindU _     _    (_, Heap.viewMin -> Nothing) = Nothing
+pathfindU solid dest (visited, Heap.viewMin -> Just (Heap.Entry priority path, heap))
+  | priority == distance path = Just path
+  | otherwise =
+      let p = head (nodes path)
+          w = solid ! p
+          h = hook (dir path) w
+          turns = if | h == 1    -> [clock (dir path)]
+                     | h == 2    -> [anticlock (dir path)]
+                     | h == 3    -> [clock (dir path), anticlock (dir path)]
+                     | otherwise -> []
+          newHeap dirs = Heap.fromList (mapMaybe (entry visited path dest p <*> walk solid dest p) dirs)
+      in if | Set.member p visited ->
+                pathfindU solid dest (visited, heap)
+            | w .&. dirBit (dir path) > 0 ->
+                pathfindU solid dest (Set.insert p visited, heap `Heap.union` newHeap turns)
+            | h > 0 ->
+                pathfindU solid dest (Set.insert p visited, heap `Heap.union` newHeap (dir path : turns))
+            | otherwise ->
+                pathfindU solid dest (Set.insert p visited, heap `Heap.union` newHeap (openFrom (dir path) w))
+
 pathfind' :: UArray (Row, Col) Word16
           -> (Row, Col)
           -> (Visited, Heap (Entry Int Path))
@@ -263,6 +289,7 @@ pathfind' solid dest (visited, Heap.viewMin -> Just (Heap.Entry priority path, h
                 Right $ (Set.insert p visited, heap `Heap.union` newHeap [dir path, clock (dir path), anticlock (dir path)])
             | otherwise ->
                 Right $ (Set.insert p visited, heap `Heap.union` newHeap (openFrom (dir path) w))
+
 
 type STV s = STUArray s (Row, Col) Bool
 
@@ -294,18 +321,16 @@ pathfindSTV solid dest visited (Heap.viewMin -> Just (Heap.Entry priority path, 
       if vis then pathfindSTV solid dest visited heap else do
           let w = solid ! p
               h = hook (dir path) w
+              turns = if | h == 1    -> [clock (dir path)]
+                         | h == 2    -> [anticlock (dir path)]
+                         | h == 3    -> [clock (dir path), anticlock (dir path)]
+                         | otherwise -> []
           writeArray visited p True
           if | w .&. dirBit (dir path) > 0 -> do
-                 heap' <- newHeap (openFrom (dir path) w) p
+                 heap' <- newHeap turns p
                  pathfindSTV solid dest visited $ heap `Heap.union` heap'
-             | h == 1 -> do
-                 heap' <- newHeap [dir path, clock (dir path)] p
-                 pathfindSTV solid dest visited $ heap `Heap.union` heap'
-             | h == 2 -> do
-                 heap' <- newHeap [dir path, anticlock (dir path)] p
-                 pathfindSTV solid dest visited $ heap `Heap.union` heap'
-             | h == 3 -> do
-                 heap' <- newHeap [dir path, clock (dir path), anticlock (dir path)] p
+             | h > 0 -> do
+                 heap' <- newHeap (dir path: turns) p
                  pathfindSTV solid dest visited $ heap `Heap.union` heap'
              | otherwise -> do
                  heap' <- newHeap (openFrom (dir path) w) p
@@ -328,6 +353,9 @@ pathfind2 solid start dest = runST $ do
   visited <- newArray (bounds solid) False
   writeArray visited start True
   pathfindSTV solid dest visited (startHeap solid start dest)
+
+pathfind3 :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Maybe Path
+pathfind3 solid start dest = pathfindU solid dest (Set.insert start Set.empty, startHeap solid start dest)
 
 
 -- Implementation of A*, for reference:
