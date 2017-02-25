@@ -20,6 +20,7 @@ module Core.Engine
     , opacity, visible, shadowCast, seen, solid
     , statics, static, staticChar
     , message, messageLog, clearMessages
+    , floorItems
     , runEffects
     , cast
     , defaultLevel
@@ -42,6 +43,8 @@ import Control.Monad.Trans.Maybe
 import Data.Array.Unboxed
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IMap
+import Data.Map (Map)
+import qualified Data.Map as Map
 import Data.Maybe (listToMaybe)
 
 import qualified Data.Aeson as J
@@ -63,6 +66,7 @@ data Level = Level
     , _actors     :: IntMap Actor
     , _effects    :: IntMap Effect
     , _peffects   :: IntMap Effect  -- Processed effects
+    , _items      :: Map (Row, Col) (Map Text Int)
     , _statics    :: Array (Row, Col) (Char, Entity)
     , _playerDMap :: DijkstraMap
     , _messageLog :: [Text]
@@ -202,6 +206,13 @@ clearMessages l = l { _messageLog = [] }
 messageLog :: Level -> [Text]
 messageLog = _messageLog
 
+floorItems :: (Row, Col) -> Level :~> Map Text Int
+floorItems p = unsafeWeakLens (lens (Map.findWithDefault Map.empty p . _items) set)
+  where
+    set v l
+      | Map.null v = l { _items = Map.delete p (_items l) }
+      | otherwise  = l { _items = Map.insert p v (_items l) }
+
 data Effect = Effect
     { effectDispel :: Maybe (Game () Level ())
     , effectAction :: Fix (MaybeT (Game () Level))
@@ -259,6 +270,7 @@ defaultLevel = Level
     , _effects    = IMap.empty
     , _peffects   = IMap.empty
     , _statics    = array (bounds defaultFloor) (map (second (, ECS.empty)) (assocs defaultFloor'))
+    , _items      = Map.empty
     , _playerDMap = mkDijkstraMap [(1,1)] defaultFloor
     , _messageLog = []
     }
@@ -282,6 +294,13 @@ actorToJSON entityToJSON actor = J.object
   , ("entity", entityToJSON (_aentity actor))
   ]
 
+itemsToJSON :: (Row, Col) -> Map Text Int -> J.Value
+itemsToJSON (r, c) inv = J.object
+  [ ("row", J.toJSON r)
+  , ("col", J.toJSON c)
+  , ("items", J.toJSON inv)
+  ]
+
 arefJSON :: ARef -> Text
 arefJSON (ARef n) = T.pack ('a' : show n)
 
@@ -298,6 +317,7 @@ levelToJSON entityToJSON lev = J.object
     , ("visible", arrayToJSON boolChar (_visible lev))
     , ("seen", arrayToJSON boolChar (_seen lev))
     , ("actors", actorsToJSON entityToJSON (_actors lev))
+    , ("items", J.toJSON (Map.elems (Map.mapWithKey itemsToJSON (_items lev))))
     , ("messages", J.toJSON (_messageLog lev))
     ]
   where

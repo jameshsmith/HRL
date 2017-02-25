@@ -35,6 +35,7 @@ socket.on('message', updateMsg)
 
 function updateMsg (message) {
     if (message.type === "level") {
+	console.log(message.payload)
 	level.update(message.payload)
     } else if (message.type === "loading") {
 	console.log("Loading: " + message.payload)

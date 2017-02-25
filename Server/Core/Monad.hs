@@ -7,7 +7,7 @@ module Core.Monad
     , Result (..)
     -- * Dice and random numbers
     , roll, coin, d4, d6, d8, d10, d12, d20, d24, d30, d100
-    , Dice (Roll, Const), dice, pick
+    , Dice (Roll, Const), dice, pick, pickNonEmpty
     -- * Other suspensions
     , yesNo, turn, uniqueInt
     , generate
@@ -15,6 +15,7 @@ module Core.Monad
     -- * State functions
     , (!=), (!!=), (%=), (%%=), (~=), (~~=), (#=), (##=)
     , access, with, rd, level, modifyLevel
+    , Table, rollTable
     ) where
 
 import Core.Types
@@ -272,3 +273,19 @@ rd f = f <$> (liftState . Lens.access) id
 
 pick :: a -> [a] -> Game k l a
 pick x xs@(length -> l) = ((x:xs) !!) <$> roll (0, l)
+
+pickNonEmpty :: [a] -> Game k l a
+pickNonEmpty xs@(length -> l) = (xs !!) <$> roll (0, l - 1)
+
+type Table a = [(Int, a)]
+
+rollTable :: Table a -> Game k l a
+rollTable tbl = do
+    n <- roll (1, sum (map fst tbl))
+    return $ fromTable tbl n
+
+fromTable :: Table a -> Int -> a
+fromTable [] m = error "Empty table"
+fromTable ((n, x) : tbl') m
+  | m <= n    = x
+  | otherwise = fromTable tbl' (m - n) 

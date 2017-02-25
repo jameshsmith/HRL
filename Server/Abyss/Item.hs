@@ -43,7 +43,7 @@ itemDesc = _desc
 itemModifier :: Item -> ECS.Entity -> ECS.Entity
 itemModifier = _modifier
 
-data Inventory = Inventory (Map Text Int)
+newtype Inventory = Inventory (Map Text Int)
 
 instance ECS.Component Inventory where
   stock = Inventory Map.empty

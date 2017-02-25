@@ -15,6 +15,7 @@ import Component.AI
 import Component.Name
 import Component.Modifier
 import Gen.Dungeon
+import Gen.Level
 
 import Control.Arrow (second)
 import Control.Monad
@@ -38,35 +39,6 @@ bump self dir = do
         Nothing -> do
             when blocked $ self `activate` move4 dir l
             loc <# aref self != if blocked then l else move4 dir l
-
-zombie :: ECS.Entity
-zombie =
-  ECS.insert (simpleAI shamble)
-  >>> ECS.insert (Name "Zombie")
-  >>> ECS.modify (setL defense 5)
-  >>> ECS.modify (setL (attribute CON) 7)
-  >>> ECS.modify (setL damage [(Roll 1 d4, Bashing), (Roll 1 (0, 1), Necrotic)])
-  $ ECS.empty
-
-shamble :: ARef -> Game () Level ()
-shamble self = do
-    willMove <- coin
-    when willMove $ do
-        pos <- access (loc <# aref self)
-        moves <- downhill pos <$> access playerDMap
-        d <- pick N4 [E4, S4, W4]
-        monMove pos self (moves ++ [d])
-
-monMove :: (Row, Col) -> ARef -> [Dir4] -> Game () Level ()
-monMove _   _    []     = return ()
-monMove pos self (d:ds) = do
-    occupier <- listToMaybe . living (\a -> a ^. loc == move4 d pos) <$> level
-    blocked  <- access (ix (move4 d pos) <# solid)
-    case occupier of
-        Just mon | mon == player -> self `meleeAttack` mon
-        Just _                   -> monMove pos self ds
-        Nothing  | blocked       -> monMove pos self ds
-        Nothing                  -> loc <# aref self != move4 d pos
 
 data Action = Move Dir4
             | Skip
@@ -132,7 +104,15 @@ ritualChamber = [ "###+#+###"
                 , "#       #"
                 , "###+#+###"
                 ]
-                  
+
+hallway = [ "#################"
+          , "#               #"
+          , "#   #   #   #   #"
+          , "+               +"
+          , "#   #   #   #   #"
+          , "#               #"
+          , "#################"
+          ]
 
 initStatic :: Bool -> (Char, ECS.Entity)
 initStatic True = ('#', setL ECS.lens (Name "Wall") ECS.empty)
@@ -140,36 +120,10 @@ initStatic False = (' ', setL ECS.lens (Name "Floor") ECS.empty)
 
 initGame :: Game Action Level ()
 initGame = do
-    layout <- generate (dungeonGen (ritualChamber : map plainRoom rooms))
+    loadLevel (LevelSpec (dungeonGen (ritualChamber : hallway : map plainRoom rooms)))
 
     actor player != Name "Player"
 
-    let s = amap (\s -> s /= ' ' && s /= '*') layout
-    solid != s
-    opacity != s
-    seen != listArray (bounds s) (repeat False)
-    statics != array (bounds s) (map (second initStatic) (assocs s))
-
-    let freeSpot = fst . head $ filter ((==) False . snd) (assocs s)
-
-    loc <# aref player != freeSpot
-    playerDMap != mkDijkstraMap [freeSpot] s
-
-    modifyLevel shadowCast
-    
-    forM [1..10] $ \_ -> void $ spawn freeSpot (Egg 'Z' White zombie)
-
-    let doors = filter ((== '+') . snd) (assocs layout)
-    
-    forM_ doors $ \(d, _) -> do
-        staticChar d != '+'
-        static d != door
-        static d != Name "door"
-
-    let rituals = filter ((== '*') . snd) (assocs layout)
-    forM_ rituals $ \(d, _) -> do
-        staticChar d != '*'
-    
     game
 
 game :: Game Action Level ()
