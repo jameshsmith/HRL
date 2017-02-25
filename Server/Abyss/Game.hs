@@ -118,9 +118,20 @@ initStatic :: Bool -> (Char, ECS.Entity)
 initStatic True = ('#', setL ECS.lens (Name "Wall") ECS.empty)
 initStatic False = (' ', setL ECS.lens (Name "Floor") ECS.empty)
 
+levelOne :: LevelSpec
+levelOne = LevelSpec
+    { generator    = dungeonGen (ritualChamber : hallway : map plainRoom rooms)
+    , initializer  = defaultInitializer
+    , monsterCount = 0
+    , monsterTable = []
+    , itemCount    = 0
+    , itemTable    = []
+    }
+                     
+
 initGame :: Game Action Level ()
 initGame = do
-    loadLevel (LevelSpec (dungeonGen (ritualChamber : hallway : map plainRoom rooms)))
+    loadLevel levelOne
 
     actor player != Name "Player"
 

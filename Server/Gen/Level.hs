@@ -19,6 +19,7 @@ import Control.Monad.Trans.State
 import Data.Array.Unboxed
 import Data.Maybe (listToMaybe)
 import System.Random
+import Data.Text (Text)
 
 zombie :: ECS.Entity
 zombie =
@@ -50,20 +51,25 @@ monMove pos self (d:ds) = do
         Nothing                  -> loc <# aref self != move4 d pos
 
 data LevelSpec = LevelSpec
-    { generator :: State StdGen (UArray (Row, Col) Char)
+    { generator    :: State StdGen (UArray (Row, Col) Char)
+    , initializer  :: Char -> ECS.Entity
+    , monsterCount :: Int
+    , monsterTable :: Table Egg
+    , itemCount    :: Int
+    , itemTable    :: Table (Text, Dice)
     }
-
+    
 isSolid :: Char -> Bool
 isSolid ' ' = False
 isSolid '*' = False
 isSolid _   = True
 
-initStatic :: Char -> ECS.Entity
-initStatic ' ' = setL ECS.lens (Name "Wall") ECS.empty
-initStatic '#' = setL ECS.lens (Name "Floor") ECS.empty
-initStatic '*' = setL ECS.lens (Name "Ritual Circle") ECS.empty
-initStatic '+' = ECS.insert (Name "Door") >>> ECS.insert door $ ECS.empty
-initStatic _   = ECS.empty
+defaultInitializer :: Char -> ECS.Entity
+defaultInitializer ' ' = setL ECS.lens (Name "Wall") ECS.empty
+defaultInitializer '#' = setL ECS.lens (Name "Floor") ECS.empty
+defaultInitializer '*' = setL ECS.lens (Name "Ritual Circle") ECS.empty
+defaultInitializer '+' = ECS.insert (Name "Door") >>> ECS.insert door $ ECS.empty
+defaultInitializer _   = ECS.empty
 
 loadLevel :: LevelSpec -> Game k Level ()
 loadLevel spec = do
@@ -72,7 +78,7 @@ loadLevel spec = do
     solid != amap isSolid layout
     opacity != amap isSolid layout
     seen != listArray (bounds layout) (repeat False)
-    statics != array (bounds layout) (map (second ((,) <*> initStatic)) (assocs layout))
+    statics != array (bounds layout) (map (second ((,) <*> initializer spec)) (assocs layout))
 
     forM_ (assocs layout) $ \(p, c) -> do
         staticChar p != c
