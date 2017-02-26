@@ -1,7 +1,5 @@
 
 moveStart = (event) ->
-    console.log "moving"
-    
     dragWindow = event.target.closest ".window"
 
     rect = dragWindow.getBoundingClientRect()
@@ -66,4 +64,4 @@ module.exports = (settings) ->
     @frame = win
     document.body.appendChild win
 
-    @
+    this

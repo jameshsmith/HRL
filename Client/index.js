@@ -35,10 +35,10 @@ socket.on('message', updateMsg)
 
 function updateMsg (message) {
     if (message.type === "level") {
-	console.log(message.payload)
-	level.update(message.payload)
+        console.log(message.payload)
+        level.update(message.payload)
     } else if (message.type === "loading") {
-	console.log("Loading: " + message.payload)
+        console.log("Loading: " + message.payload)
     }
 
     waiting = false
@@ -54,47 +54,47 @@ var chord = ""
 
 function keyPress (event) {
     if (!waiting) {
-	keyPressPrime(event)
+        keyPressPrime(event)
     }
 }
 
 function keyPressPrime (event) {
 
     if (chord === "") {
-	if (event.key === "w") {
-	    socket.sendMessage(actionMessage({"move": "N"}))
-	} else if (event.key === "d") {
-	    socket.sendMessage(actionMessage({"move": "E"}))
-	} else if (event.key === "s") {
-	    socket.sendMessage(actionMessage({"move": "S"}))	
-	} else if (event.key === "a") {
-	    socket.sendMessage(actionMessage({"move": "W"}))
-	} else if (event.key === " ") {
-	    socket.sendMessage(actionMessage("skip"))
-	} else if (event.key === "t") {
-	    chord += "t"
-	} else if (event.key === "b") {
-	    var win = document.getElementById("spellbook")
-	    win.style.visibility = "visible"
-	} else if (event.key === "m") {
-	    var win = document.getElementById("messagebox")
-	    win.style.visibility = "visible"
-	} else if (event.key === "i") {
-	    var win = document.getElementById("inventory")
-	    win.style.visibility = "visible"
-	}
+        if (event.key === "w") {
+            socket.sendMessage(actionMessage({"move": "N"}))
+        } else if (event.key === "d") {
+            socket.sendMessage(actionMessage({"move": "E"}))
+        } else if (event.key === "s") {
+            socket.sendMessage(actionMessage({"move": "S"}))    
+        } else if (event.key === "a") {
+            socket.sendMessage(actionMessage({"move": "W"}))
+        } else if (event.key === " ") {
+            socket.sendMessage(actionMessage("skip"))
+        } else if (event.key === "t") {
+            chord += "t"
+        } else if (event.key === "b") {
+            var win = document.getElementById("spellbook")
+            win.style.visibility = "visible"
+        } else if (event.key === "m") {
+            var win = document.getElementById("messagebox")
+            win.style.visibility = "visible"
+        } else if (event.key === "i") {
+            var win = document.getElementById("inventory")
+            win.style.visibility = "visible"
+        }
     } else if (chord === "t") {
-	if (event.key === "w") {
-	    socket.sendMessage(actionMessage({"activate": "N"}))
-	} else if (event.key === "d") {
-	    socket.sendMessage(actionMessage({"activate": "E"}))
-	} else if (event.key === "s") {
-	    socket.sendMessage(actionMessage({"activate": "S"}))	
-	} else if (event.key === "a") {
-	    socket.sendMessage(actionMessage({"activate": "W"}))
-	}
+        if (event.key === "w") {
+            socket.sendMessage(actionMessage({"activate": "N"}))
+        } else if (event.key === "d") {
+            socket.sendMessage(actionMessage({"activate": "E"}))
+        } else if (event.key === "s") {
+            socket.sendMessage(actionMessage({"activate": "S"}))        
+        } else if (event.key === "a") {
+            socket.sendMessage(actionMessage({"activate": "W"}))
+        }
 
-	chord = ""
+        chord = ""
     }
 }
 
@@ -107,12 +107,12 @@ function start () {
 
 function initUI () {
     var messages = new Window({
-	title: "Messages",
-	frameId: "messagebox",
-	contentId: "messages"
+        title: "Messages",
+        frameId: "messagebox",
+        contentId: "messages"
     })
     messages.onClose(function () {
-	messages.frame.style.visibility = "hidden"
+        messages.frame.style.visibility = "hidden"
     })
 
     spellbook = new Spellbook()
@@ -183,7 +183,7 @@ function canvasMouseMove (event) {
 
 function canvasClick (event) {
     if (!waiting) {
-	socket.sendMessage(actionMessage({"name": spellbook.spell(), "row": selectedR, "col": selectedC}))
+        socket.sendMessage(actionMessage({"name": spellbook.spell(), "row": selectedR, "col": selectedC}))
     }
 }
 
