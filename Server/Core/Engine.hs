@@ -76,7 +76,7 @@ data Status = Alive | Dead | Hidden deriving (Eq, Show)
 
 data Actor = Actor
     { _aloc    :: (Row, Col)
-    , _status  :: Status
+    , _astatus :: Status
     , _achar   :: Char
     , _acolor  :: Color
     , _aentity :: Entity
@@ -94,19 +94,19 @@ spawn pos (Egg chr color ent) = do
     return (ARef uid)
 
 hidden :: Actor -> Bool
-hidden = (==) Hidden . _status
+hidden = (==) Hidden . _astatus
 
 alive :: Actor -> Bool
-alive = (==) Alive . _status
+alive = (==) Alive . _astatus
 
 dead :: Actor -> Bool
-dead = (==) Dead . _status
+dead = (==) Dead . _astatus
 
 kill :: Actor -> Actor
-kill e = if _status e == Alive then e { _status = Dead } else e
+kill e = if _astatus e == Alive then e { _astatus = Dead } else e
 
 resurrect :: Actor -> Actor
-resurrect e = if _status e == Dead then e { _status = Alive } else e
+resurrect e = if _astatus e == Dead then e { _astatus = Alive } else e
 
 -- | Lens for an actors location
 loc :: Actor :-> (Row, Col)
@@ -290,7 +290,7 @@ actorToJSON :: (Entity -> J.Value) -> Actor -> J.Value
 actorToJSON entityToJSON actor = J.object
   [ ("row", J.toJSON . fst $ _aloc actor)
   , ("col", J.toJSON . snd $ _aloc actor)
-  , ("chr", if _status actor == Dead then J.toJSON 'c' else J.toJSON (_achar actor))
+  , ("chr", if _astatus actor == Dead then J.toJSON 'c' else J.toJSON (_achar actor))
   , ("entity", entityToJSON (_aentity actor))
   ]
 

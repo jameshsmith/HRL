@@ -145,7 +145,8 @@ game = do
     forM_ refs $ \ref -> do
         (Hurt amount) <- modified ref
         hp <- getL baseHP <$> modified ref
-        if (hp - amount) <= 0
+        monster <- access (aref ref)
+        if (hp - amount) <= 0 || dead monster
             then aref ref %= kill
             else runAI ref
       
