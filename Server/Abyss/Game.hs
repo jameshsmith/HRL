@@ -9,7 +9,6 @@ import Core.Types
 import Core.Engine
 import Core.Monad
 import Core.DijkstraMap
-import qualified Core.ECS as ECS
 import Component.Activator
 import Component.AI
 import Component.Name
@@ -17,9 +16,7 @@ import Component.Modifier
 import Gen.Dungeon
 import Gen.Level
 
-import Control.Arrow (second)
 import Control.Monad
-import Data.Array.Unboxed
 import qualified Data.Map as Map
 import Data.Maybe (listToMaybe)
 import qualified Data.Serialize as S
@@ -114,10 +111,6 @@ hallway = [ "#################"
           , "#################"
           ]
 
-initStatic :: Bool -> (Char, ECS.Entity)
-initStatic True = ('#', setL ECS.lens (Name "Wall") ECS.empty)
-initStatic False = (' ', setL ECS.lens (Name "Floor") ECS.empty)
-
 levelOne :: LevelSpec
 levelOne = LevelSpec
     { generator    = dungeonGen (ritualChamber : hallway : map plainRoom rooms)
@@ -127,7 +120,6 @@ levelOne = LevelSpec
     , itemCount    = 0
     , itemTable    = []
     }
-                     
 
 initGame :: Game Action Level ()
 initGame = do

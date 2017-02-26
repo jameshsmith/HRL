@@ -98,6 +98,6 @@ loadLevel spec = do
         spawnLoc <- pickNonEmpty monSpots
         occupier <- listToMaybe . living (\a -> a ^. loc == spawnLoc) <$> level
         case occupier of
-            Just mon -> return ()
+            Just _  -> return ()
             Nothing -> do
                 void $ spawn spawnLoc (Egg 'Z' White zombie)

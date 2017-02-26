@@ -285,7 +285,7 @@ rollTable tbl = do
     return $ fromTable tbl n
 
 fromTable :: Table a -> Int -> a
-fromTable [] m = error "Empty table"
+fromTable [] _ = error "Empty table"
 fromTable ((n, x) : tbl') m
   | m <= n    = x
   | otherwise = fromTable tbl' (m - n) 
