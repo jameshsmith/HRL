@@ -1,4 +1,4 @@
-const Window = require('./window.js')
+const {Frame} = require('./frame.js')
 const tooltip = require('./tooltip.js')
 
 module.exports = function () {
@@ -9,7 +9,7 @@ module.exports = function () {
     var spellAlt
     var spellOrigin = null
 
-    var window = new Window({
+    var window = new Frame({
         title: "Spellbook",
         frameId: "spellbook",
         contentId: "spells"

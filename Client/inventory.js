@@ -1,6 +1,6 @@
 "use strict"
 
-const Window = require("./window.js")
+const Window = require("./frame.js")
 const tooltip = require("./tooltip.js")
 
 /* Create the inventory grid as an r by 8 table. Returns a <div>
@@ -12,27 +12,27 @@ function createGrid (r) {
     tableContainer.appendChild(table)
     
     for (var i = 0; i < r; i++) {
-	var tr = document.createElement("tr")
-	table.appendChild(tr)
+        var tr = document.createElement("tr")
+        table.appendChild(tr)
 
-	for (var j = 0; j < 8; j++) {
-	    var td = document.createElement("td")
-	    tr.appendChild(td)
-	}
+        for (var j = 0; j < 8; j++) {
+            var td = document.createElement("td")
+            tr.appendChild(td)
+        }
     }
     
     return tableContainer
 }
 
 module.exports = function () {
-    
-    var window = new Window({
-	title: "Inventory",
-	frameId: "inventory",
-	contentId: "items"
+
+    var window = new Frame({
+        title: "Inventory",
+        frameId: "inventory",
+        contentId: "items"
     })
     window.onClose(function () {
-	window.frame.style.visibility = "hidden"
+        window.frame.style.visibility = "hidden"
     })
 
     var controls = document.createElement("div")
@@ -40,13 +40,13 @@ module.exports = function () {
     var sortButton = document.createElement("img")
     sortButton.src = "ui/isort.png"
     sortButton.addEventListener("mouseover", function () {
-	sortButton.src = "ui/isort2.png"
+        sortButton.src = "ui/isort2.png"
     })
     sortButton.addEventListener("mouseout", function () {
-	sortButton.src = "ui/isort.png"
+        sortButton.src = "ui/isort.png"
     })
     sortButton.addEventListener("click", function () {
-	sort()
+        sort()
     })
     controls.appendChild(sortButton)
     
@@ -69,166 +69,166 @@ module.exports = function () {
     // Returns the first free slot in the items array. Expanding the
     // visual representation of the array as neccessary
     function freeSlot () {
-	var free = -1
-	
-	for (var i = 0; i < items.length && free === -1; i++) {
-	    if (items[i] === undefined || items[i] === null) {
-		free = i
-	    }
-	}
+        var free = -1
+        
+        for (var i = 0; i < items.length && free === -1; i++) {
+            if (items[i] === undefined || items[i] === null) {
+                free = i
+            }
+        }
 
-	if (free === -1) {
-	    free = items.length
-	}
-	
-	// Test is false if we went beyond the maximum space but we
-	// still have at least a full free row, if not add a new row.
-	if (free >= uiRows * 8 - 8) {
-	    var tr = document.createElement("tr")
-	    grid.appendChild(tr)
-	    
-	    for (var j = 0; j < 8; j++) {
-		var td = document.createElement("td")
-		tr.appendChild(td)
-	    }
+        if (free === -1) {
+            free = items.length
+        }
+        
+        // Test is false if we went beyond the maximum space but we
+        // still have at least a full free row, if not add a new row.
+        if (free >= uiRows * 8 - 8) {
+            var tr = document.createElement("tr")
+            grid.appendChild(tr)
+            
+            for (var j = 0; j < 8; j++) {
+                var td = document.createElement("td")
+                tr.appendChild(td)
+            }
 
-	    uiRows++
-	}
+            uiRows++
+        }
 
-	return free
+        return free
     }
     this.freeSlot = freeSlot
 
     this.splitStack = function (loc, number) {
-	if (items[loc] !== null && items[loc] !== undefined) {
-	    if (items[loc].count > number) {
-		items[loc].count -= number
-		
-		var newLoc = freeSlot()
+        if (items[loc] !== null && items[loc] !== undefined) {
+            if (items[loc].count > number) {
+                items[loc].count -= number
+                
+                var newLoc = freeSlot()
 
-		items[newLoc] = {
-		    name: items[loc].name,
-		    count: number
-		}
-		imap[items[loc].name].push(newLoc)
+                items[newLoc] = {
+                    name: items[loc].name,
+                    count: number
+                }
+                imap[items[loc].name].push(newLoc)
 
-		refreshAt(loc)
-		refreshAt(newLoc)
-	    }
-	}
+                refreshAt(loc)
+                refreshAt(newLoc)
+            }
+        }
     }
 
     function update (patch) {
-	var changes = 0
-	var keyDels = 0
-	
-	for (var i in Object.keys(imap)) {
-	    // They object exists in the patch
-	    var key = Object.keys(imap)[i - keyDels]
+        var changes = 0
+        var keyDels = 0
+        
+        for (var i in Object.keys(imap)) {
+            // They object exists in the patch
+            var key = Object.keys(imap)[i - keyDels]
 
-	    if (patch[key] !== undefined) {
-		var itemCount = 0
-		for (var j = 0; j < imap[key].length; j++) {
-		    itemCount += items[imap[key][j]].count
-		}
-		
-		var diff = patch[key] - itemCount
-		if (diff > 0) {
-		    // The amount of items has increased
-		    items[imap[key][0]].count += diff
-		    changes++
-		} else if (diff < 0) {
-		    // The amount of items has decreased
-		    var removed = 0
-		    
-		    for (var j = 0; j < imap[key].length; j++) {
-			var c = (items[imap[key][j]].count += diff)
-			if (c <= 0) {
-			    items[imap[key][j]] = null
-			    removed++
-			    diff = c
-			} else {
-			    break
-			}
-		    }
+            if (patch[key] !== undefined) {
+                var itemCount = 0
+                for (var j = 0; j < imap[key].length; j++) {
+                    itemCount += items[imap[key][j]].count
+                }
+                
+                var diff = patch[key] - itemCount
+                if (diff > 0) {
+                    // The amount of items has increased
+                    items[imap[key][0]].count += diff
+                    changes++
+                } else if (diff < 0) {
+                    // The amount of items has decreased
+                    var removed = 0
+                    
+                    for (var j = 0; j < imap[key].length; j++) {
+                        var c = (items[imap[key][j]].count += diff)
+                        if (c <= 0) {
+                            items[imap[key][j]] = null
+                            removed++
+                            diff = c
+                        } else {
+                            break
+                        }
+                    }
 
-		    imap[key].splice(0, removed)
-		    changes++
-		}
+                    imap[key].splice(0, removed)
+                    changes++
+                }
 
-		console.log(key + " difference : " + (patch[key] - itemCount))
-		delete patch[key]
-	    } else {
-		// The object doesn't exist in the patch
+                console.log(key + " difference : " + (patch[key] - itemCount))
+                delete patch[key]
+            } else {
+                // The object doesn't exist in the patch
 
-		for (var j = 0; j < imap[key].length; j++) {
-		    items[imap[key][j]] = null
-		}
-		
-		delete imap[key]
-		keyDels++
-		delete patch[key]
-		console.log("Remove all " + key)
-		changes++
-	    }
-	}
+                for (var j = 0; j < imap[key].length; j++) {
+                    items[imap[key][j]] = null
+                }
+                
+                delete imap[key]
+                keyDels++
+                delete patch[key]
+                console.log("Remove all " + key)
+                changes++
+            }
+        }
 
-	// Everything left in the patch can't exist in the UI
-	for (var i in Object.keys(patch)) {
-	    key = Object.keys(patch)[i]
+        // Everything left in the patch can't exist in the UI
+        for (var i in Object.keys(patch)) {
+            key = Object.keys(patch)[i]
 
-	    var loc = freeSlot()
-	    items[loc] = {
-		name: key,
-		count: patch[key]
-	    }
-	    imap[key] = [loc]
-	    
-	    console.log("Add : " + key)
-	    changes++
-	}
+            var loc = freeSlot()
+            items[loc] = {
+                name: key,
+                count: patch[key]
+            }
+            imap[key] = [loc]
+            
+            console.log("Add : " + key)
+            changes++
+        }
 
-	if (changes > 0) {
-	    for (var i = 0; i < uiRows * 8; i++) {
-		refreshAt(i)
-	    }
-	}
-	console.log("Changes made to inventory: " + changes)
+        if (changes > 0) {
+            for (var i = 0; i < uiRows * 8; i++) {
+                refreshAt(i)
+            }
+        }
+        console.log("Changes made to inventory: " + changes)
     }
     this.update = update
 
     function sort () {
-	var patch = {}
-	
-	for (var i in Object.keys(imap)) {
-	    var key = Object.keys(imap)[i]
+        var patch = {}
+        
+        for (var i in Object.keys(imap)) {
+            var key = Object.keys(imap)[i]
 
-	    var itemCount = 0
-	    for (var j = 0; j < imap[key].length; j++) {
-		itemCount += items[imap[key][j]].count
-	    }
+            var itemCount = 0
+            for (var j = 0; j < imap[key].length; j++) {
+                itemCount += items[imap[key][j]].count
+            }
 
-	    patch[key] = itemCount
-	}
+            patch[key] = itemCount
+        }
 
-	update({})
-	update(patch)
+        update({})
+        update(patch)
     }
     this.sort = sort
 
     function refreshAt (n) {
-	var td = document.querySelectorAll("#items td")[n]
+        var td = document.querySelectorAll("#items td")[n]
 
-	while(td.hasChildNodes()) {
-	    td.removeChild(td.lastChild)
-	}
-	
-	if (items[n] !== undefined && items[n] !== null) {
-	    var img = document.createElement("img")
-	    img.src = "ui/item/" + items[n].name + ".png"
-	    var count = document.createTextNode(items[n].count)
-	    td.appendChild(img)
-	    td.appendChild(count)
-	}
+        while(td.hasChildNodes()) {
+            td.removeChild(td.lastChild)
+        }
+        
+        if (items[n] !== undefined && items[n] !== null) {
+            var img = document.createElement("img")
+            img.src = "ui/item/" + items[n].name + ".png"
+            var count = document.createTextNode(items[n].count)
+            td.appendChild(img)
+            td.appendChild(count)
+        }
     }
 }

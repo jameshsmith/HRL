@@ -9,7 +9,8 @@
   "author": "James H. Smith",
   "license": "MIT",
   "devDependencies": {
-      "electron": "^1.4.15",
-      "json-socket": "*"
+    "@types/node": "^7.0.5",
+    "electron": "^1.4.15",
+    "json-socket": "*"
   }
 }

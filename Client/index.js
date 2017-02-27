@@ -2,7 +2,7 @@ const net = require('net')
 const fs = require('fs')
 const JsonSocket = require('json-socket')
 
-const Window = require('./window.js')
+const {Frame} = require('./frame.js')
 const tooltip = require('./tooltip.js')
 
 const Spellbook = require('./spellbook.js')
@@ -99,14 +99,13 @@ function keyPressPrime (event) {
 }
 
 function start () {
-    initUI()
     initTHREE()
-    
+    initUI()
     animate()
 }
 
 function initUI () {
-    var messages = new Window({
+    var messages = new Frame({
         title: "Messages",
         frameId: "messagebox",
         contentId: "messages"
