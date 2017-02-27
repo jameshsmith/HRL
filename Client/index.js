@@ -11,7 +11,7 @@ var spellbook = {}
 const Inventory = require('./inventory.js')
 var inventory = {}
 
-const Level = require('./level.js')
+const {Level} = require('./level.js')
 var level = {}
 
 var scene, camera, renderer;

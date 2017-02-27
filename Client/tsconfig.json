@@ -6,6 +6,7 @@
         "sourceMap": false
     },
     "files": [
-        "frame.ts"
+        "frame.ts",
+        "level.ts"
     ]
 }
