@@ -1,0 +1,28 @@
+# Emacs Autosaves
+*~
+
+# Art files
+Art/
+
+# No node_modules
+node_modules/
+
+# No cabal sandbox
+.cabal-sandbox/
+cabal.sandbox.config
+
+# Haskell Stuff
+*.hi
+*.o
+*.hp
+*.aux
+*.ps
+*.prof
+Server/dist/
+
+# Compiled Executables
+*.exe
+
+# Typings
+*.d.ts
+Client/typings/
