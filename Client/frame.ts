@@ -21,29 +21,29 @@ function moveStart (event) {
 }
 
 export class Frame {
-    public frame: HTMLDivElement
+    public container: HTMLDivElement
     public content: HTMLDivElement
 
     private closeFrame () : void {
-        document.body.removeChild(this.frame)
+        document.body.removeChild(this.container)
     }
 
-    public onClose (f) : void {
+    public onClose (f : () => void) : void {
         this.closeFrame = f
     }
 
     constructor (settings) {
         /* Create the frame div */
-        this.frame = document.createElement("div")
-        this.frame.className = "window"
+        this.container = document.createElement("div")
+        this.container.className = "window"
 
         if (settings.frameId == null) {
-            this.frame.style.height = settings.h + "px"
-            this.frame.style.width = settings.w + "px"
-            this.frame.style.left = settings.x + "px"
-            this.frame.style.top = settings.y + "px"
+            this.container.style.height = settings.h + "px"
+            this.container.style.width = settings.w + "px"
+            this.container.style.left = settings.x + "px"
+            this.container.style.top = settings.y + "px"
         } else {
-            this.frame.id = settings.frameId
+            this.container.id = settings.frameId
         }
 
         /* Create the title bar */
@@ -83,9 +83,9 @@ export class Frame {
         }
 
         /* Add everything to the Frame and add it to the document */
-        this.frame.appendChild(tb)
-        this.frame.appendChild(this.content)
+        this.container.appendChild(tb)
+        this.container.appendChild(this.content)
 
-        document.body.appendChild(this.frame)
+        document.body.appendChild(this.container)
     }
 }

@@ -3,12 +3,11 @@ const fs = require('fs')
 const JsonSocket = require('json-socket')
 
 const {Frame} = require('./frame.js')
-const tooltip = require('./tooltip.js')
 
 const Spellbook = require('./spellbook.js')
 var spellbook = {}
 
-const Inventory = require('./inventory.js')
+const {Inventory} = require('./inventory.js')
 var inventory = {}
 
 const {Level} = require('./level.js')

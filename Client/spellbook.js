@@ -1,5 +1,4 @@
 const {Frame} = require('./frame.js')
-const tooltip = require('./tooltip.js')
 
 module.exports = function () {
     var spell = ""
@@ -41,7 +40,6 @@ module.exports = function () {
         for (var s in knownSpells) {
             var entry = document.createElement("div")
             entry.className = "bookentry"
-            tooltip(entry, "This is a spell")
             
             var img = document.createElement("img")
             img.src = "ui/spell/" + knownSpells[s] + ".png"
@@ -50,8 +48,6 @@ module.exports = function () {
             img.addEventListener("dragstart", spellDrag)
             img.addEventListener("dragend", spellDragEnd)
             img.addEventListener("click", spellClick)
-            
-            tooltip(img, "This is a spell")
             
             var name = document.createElement("div")
             name.className = "name"

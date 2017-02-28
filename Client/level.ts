@@ -92,8 +92,6 @@ export class Level {
             this.seen[i] = new Array(41)
         }
 
-        var actor = {}
-
         // Make sure the camera is orientated the right way
         levelLookAt(camera, 0, 0)
 
