@@ -97,7 +97,7 @@ timereversal = Spell "Time Reversal" (None (Effect Nothing (fixFree timereversal
 
 timereversal' :: Free (Game k Level) ()
 timereversal' = do
-    l <- liftF (message "Temporal reset in 10" >> level)
+    l <- liftF (do { l' <- level; message "Temporal reset in 10"; return l' })
     forM_ [9, 8..1] $ \n ->
         liftF (message ("Temporal reset in " <> T.pack (show n)))
     liftF (unsafeWeakLens id != l)

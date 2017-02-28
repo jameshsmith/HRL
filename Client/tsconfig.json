@@ -2,6 +2,7 @@
     "compilerOptions": {
         "module": "commonjs",
         "target": "es5",
+        "moduleResolution": "node",
         "noImplicitAny": false,
         "sourceMap": false
     },
@@ -9,6 +10,7 @@
         "frame.ts",
         "level.ts",
         "inventory.ts",
-        "spellbook.ts"
+        "spellbook.ts",
+        "index.ts"
     ]
 }

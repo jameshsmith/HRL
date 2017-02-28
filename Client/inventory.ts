@@ -3,17 +3,17 @@ import {Frame} from "./frame"
 /* Create the inventory grid as an r by 8 table. Returns a <div>
  * containing the <table> element. */
 function createGrid (r: number): HTMLDivElement {
-    var tableContainer = document.createElement("div")
+    let tableContainer = document.createElement("div")
     tableContainer.id = "itemgrid"
-    var table = document.createElement("table")
+    let table = document.createElement("table")
     tableContainer.appendChild(table)
     
-    for (var i = 0; i < r; i++) {
-        var tr = document.createElement("tr")
+    for (let i = 0; i < r; i++) {
+        let tr = document.createElement("tr")
         table.appendChild(tr)
 
-        for (var j = 0; j < 8; j++) {
-            var td = document.createElement("td")
+        for (let j = 0; j < 8; j++) {
+            let td = document.createElement("td")
             tr.appendChild(td)
         }
     }
@@ -30,7 +30,7 @@ interface SlotMap {
     [name: string]: number[]
 }
 
-interface InventoryUpdate {
+export interface InventoryUpdate {
     [name: string]: number
 }
 
@@ -95,11 +95,11 @@ export class Inventory extends Frame {
         // Test is false if we went beyond the maximum space but we
         // still have at least a full free row, if not add a new row.
         if (free >= this.uiRows * 8 - 8) {
-            var tr = document.createElement("tr")
+            let tr = document.createElement("tr")
             this.table.appendChild(tr)
             
-            for (var j = 0; j < 8; j++) {
-                var td = document.createElement("td")
+            for (let j = 0; j < 8; j++) {
+                let td = document.createElement("td")
                 tr.appendChild(td)
             }
 
@@ -110,16 +110,16 @@ export class Inventory extends Frame {
     }
 
     private refreshAt(loc: number): void {
-        var td = document.querySelectorAll("#items td")[loc]
+        let td = document.querySelectorAll("#items td")[loc]
 
         while(td.hasChildNodes()) {
             td.removeChild(td.lastChild)
         }
         
         if (this.items[loc] != null) {
-            var img = document.createElement("img")
+            let img = document.createElement("img")
             img.src = "ui/item/" + this.items[loc].name + ".png"
-            var count = document.createTextNode(this.items[loc].count.toString())
+            let count = document.createTextNode(this.items[loc].count.toString())
             td.appendChild(img)
             td.appendChild(count)
         }
@@ -197,7 +197,7 @@ export class Inventory extends Frame {
 
         // Everything left in the patch can't exist in the UI
         for (let key of Object.keys(patch)) {
-            var loc = this.freeSlot()
+            let loc = this.freeSlot()
             this.items[loc] = {
                 name: key,
                 count: patch[key]

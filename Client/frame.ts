@@ -1,10 +1,10 @@
 
 function moveStart (event) {
-    var dragFrame = event.target.closest(".window")
+    let dragFrame = event.target.closest(".window")
 
-    var rect = dragFrame.getBoundingClientRect()
-    var dragOffX = rect.left - event.pageX
-    var dragOffY = rect.top - event.pageY
+    let rect = dragFrame.getBoundingClientRect()
+    let dragOffX = rect.left - event.pageX
+    let dragOffY = rect.top - event.pageY
 
     function move (event) {
         dragFrame.style.left = event.pageX + dragOffX + "px"
@@ -47,17 +47,17 @@ export class Frame {
         }
 
         /* Create the title bar */
-        var tb : HTMLDivElement = document.createElement("div")
+        let tb : HTMLDivElement = document.createElement("div")
         tb.className = "titlebar"
         tb.addEventListener("mousedown", moveStart)
 
-        var tbLeft : HTMLImageElement = document.createElement("img")
+        let tbLeft : HTMLImageElement = document.createElement("img")
         tbLeft.className = "tbleft"
         tbLeft.src = "ui/tbleft.png"
 
-        var tbTitle : Text = document.createTextNode(settings.title)
+        let tbTitle : Text = document.createTextNode(settings.title)
 
-        var tbRight : HTMLImageElement = document.createElement("img")
+        let tbRight : HTMLImageElement = document.createElement("img")
         tbRight.className = "tbright"
         tbRight.src = "ui/tbright.png"
 

@@ -1,41 +1,55 @@
-const net = require('net')
-const fs = require('fs')
-const JsonSocket = require('json-socket')
 
-const {Frame} = require('./frame.js')
+import net = require("net")
+import fs = require("fs")
+import JsonSocket = require("json-socket")
 
-const {Spellbook} = require('./spellbook.js')
-var spellbook = {}
+import {Frame} from "./frame"
+import {Inventory} from "./inventory"
+import {Spellbook} from "./spellbook"
+import {Level, LevelUpdate} from "./level"
 
-const {Inventory} = require('./inventory.js')
-var inventory = {}
+let spellbook: Spellbook
+let inventory: Inventory
+let level: Level
 
-const {Level} = require('./level.js')
-var level = {}
+let scene: THREE.Scene
+let camera: THREE.Camera
+let renderer: THREE.Renderer
 
-var scene, camera, renderer;
+let chord: string = ""
 
-var rawSocket = new net.Socket()
-var socket = new JsonSocket(rawSocket)
-socket.connect(3000, 'localhost')
+let rawSocket: net.Socket = new net.Socket()
+let socket = new JsonSocket(rawSocket)
+socket.connect(3000, "localhost")
 
-var waiting = false
+let waiting: boolean = false
 
 // When the window is closed, end the connection.
 document.addEventListener('unload', function(event) {
     socket.end();
 });
 
-socket.on('connect', function() {
-    console.log('connected to server!')
+socket.on("connect", () => {
+    console.log("connected to server!")
 })
 
-socket.on('message', updateMsg)
+socket.on("message", updateMessage)
 
-function updateMsg (message) {
+function start(): void {
+    initUI()
+    initTHREE()
+    animate()
+}
+
+interface Message {
+    type: string
+    payload: any
+}
+
+function updateMessage(message: Message): void {
     if (message.type === "level") {
         console.log(message.payload)
-        level.update(message.payload)
+        level.update(<LevelUpdate>message.payload)
     } else if (message.type === "loading") {
         console.log("Loading: " + message.payload)
     }
@@ -43,21 +57,19 @@ function updateMsg (message) {
     waiting = false
 }
 
-function actionMessage (act) {
+function actionMessage(act: any): Message {
     waiting = true
     
     return {"type": "action", "payload": act}
 }
 
-var chord = ""
-
-function keyPress (event) {
+function keyPress(event: KeyboardEvent): void {
     if (!waiting) {
-        keyPressPrime(event)
+        handleKeyPress(event)
     }
 }
 
-function keyPressPrime (event) {
+function handleKeyPress(event: KeyboardEvent): void {
 
     if (chord === "") {
         if (event.key === "w") {
@@ -73,13 +85,13 @@ function keyPressPrime (event) {
         } else if (event.key === "t") {
             chord += "t"
         } else if (event.key === "b") {
-            var win = document.getElementById("spellbook")
+            let win = document.getElementById("spellbook")
             win.style.visibility = "visible"
         } else if (event.key === "m") {
-            var win = document.getElementById("messagebox")
+            let win = document.getElementById("messagebox")
             win.style.visibility = "visible"
         } else if (event.key === "i") {
-            var win = document.getElementById("inventory")
+            let win = document.getElementById("inventory")
             win.style.visibility = "visible"
         }
     } else if (chord === "t") {
@@ -97,49 +109,46 @@ function keyPressPrime (event) {
     }
 }
 
-function start () {
-    initTHREE()
-    initUI()
-    animate()
-}
-
-function initUI () {
-    var messages = new Frame({
+function initUI (): void {
+    let messages = new Frame({
         title: "Messages",
         frameId: "messagebox",
         contentId: "messages"
     })
     messages.onClose(function () {
-        messages.frame.style.visibility = "hidden"
+        messages.container.style.visibility = "hidden"
     })
 
     spellbook = new Spellbook()
     inventory = new Inventory()
 }
 
-function initTHREE() {
+let selection: THREE.Mesh
+let playerLight: THREE.PointLight
+
+function initTHREE(): void {
     scene = new THREE.Scene();
  
-    var width = window.innerWidth;
-    var height = window.innerHeight;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
     camera = new THREE.OrthographicCamera(- (width / 2), width / 2, height / 2, - (height / 2), 1, 10000);
 
-    var textureLoader = new THREE.TextureLoader()
+    let textureLoader = new THREE.TextureLoader()
     
-    var ambLight = new THREE.AmbientLight(0x505050);
+    let ambLight = new THREE.AmbientLight(0x505050);
     scene.add(ambLight);
     
     playerLight = new THREE.PointLight(0xFFCC66, 1.5, 600)
     
     level = new Level(camera, textureLoader, playerLight)
 
-    var texSelection = textureLoader.load('textures/ui/select.png')
+    let texSelection = textureLoader.load("textures/ui/select.png")
     texSelection.magFilter = THREE.NearestFilter
     texSelection.minFilter = THREE.NearestFilter
 
-    var matSelection = new THREE.MeshBasicMaterial({map: texSelection, transparent: true})
+    let matSelection = new THREE.MeshBasicMaterial({map: texSelection, transparent: true})
     
-    var geoSelection = new THREE.PlaneGeometry(64, 64)
+    let geoSelection = new THREE.PlaneGeometry(64, 64)
     geoSelection.rotateX(- (Math.PI / 2))
     geoSelection.translate(0, -31, 0)
     selection = new THREE.Mesh(geoSelection, matSelection)
@@ -157,20 +166,20 @@ function initTHREE() {
     document.body.appendChild(renderer.domElement)
 }
 
-var raycaster = new THREE.Raycaster()
-var mouseXY = new THREE.Vector2()
-var groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 32)
+let raycaster = new THREE.Raycaster()
+let mouseXY = new THREE.Vector2()
+let groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 32)
 
-var selectedR = 0
-var selectedC = 0
+let selectedR = 0
+let selectedC = 0
 
-function canvasMouseMove (event) {
+function canvasMouseMove(event: MouseEvent): void {
     mouseXY.x = (event.pageX / 1680) * 2 - 1
     mouseXY.y = - (event.pageY / 1050) * 2 + 1
 
     raycaster.setFromCamera(mouseXY, camera)
 
-    var v3 = raycaster.ray.intersectPlane(groundPlane)
+    let v3 = raycaster.ray.intersectPlane(groundPlane)
 
     selectedR = Math.ceil(v3.z / 64)
     selectedC = Math.ceil(v3.x / 64)
@@ -179,19 +188,19 @@ function canvasMouseMove (event) {
     selection.position.z = selectedR * 64
 }
 
-function canvasClick (event) {
+function canvasClick(event: MouseEvent): void {
     if (!waiting) {
         socket.sendMessage(actionMessage({"name": spellbook.spell, "row": selectedR, "col": selectedC}))
     }
 }
 
-function animate() {
+function animate(): void {
     requestAnimationFrame(animate);
 
     camera.position.x += 0
     camera.position.z += 0
 
-    var d = new Date()
+    let d = new Date()
 
     playerLight.intensity = 1 + Math.sin(d.getTime() / 500) / 5
     

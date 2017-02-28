@@ -10,21 +10,21 @@ function isHash (chr : string) {
 
 // Look at a certain spot in the level
 function levelLookAt (camera: THREE.Camera, r: number, c: number) : void {
-    var camX = 32 * 41
-    var camY = 32 * 41
-    var camZ = 32 * 41
+    let camX = 32 * 41
+    let camY = 32 * 41
+    let camZ = 32 * 41
     
     camera.position.x = camX
     camera.position.y = camY
     camera.position.z = camZ
 
-    var lX = camX / 4 * 3
-    var lZ = camZ / 2
+    let lX = camX / 4 * 3
+    let lZ = camZ / 2
 
     camera.lookAt(new THREE.Vector3(lX, 0, lZ))
     
-    var tX = c * 64 + 32
-    var tZ = r * 64 + 32
+    let tX = c * 64 + 32
+    let tZ = r * 64 + 32
 
     camera.position.x -= (lX - tX)
     camera.position.z -= (lZ - tZ)
@@ -48,7 +48,7 @@ interface ActorMap {
     [name: string]: Actor
 }
 
-interface LevelUpdate {
+export interface LevelUpdate {
     statics: string[]
     seen: string[]
     visible: string[]
@@ -99,7 +99,7 @@ export class Level {
        Load the materials for the level
        ================================================== */
     
-        var files: string[] = fs.readdirSync("textures/static/")
+        let files: string[] = fs.readdirSync("textures/static/")
         for (let file of files) {
             console.log(file)
             let tex = textureLoader.load("textures/static/" + file)
@@ -180,7 +180,7 @@ export class Level {
             this.actorMats[file] = actorMat
         }
 
-        var tex = textureLoader.load('textures/special/pentagram.png')
+        let tex = textureLoader.load('textures/special/pentagram.png')
         tex.magFilter = THREE.NearestFilter
         tex.minFilter = THREE.NearestFilter
 
@@ -328,13 +328,13 @@ export class Level {
         }
 
         // Update actors
-        for (var key in message.actors) {
-            var act = message.actors[key]
+        for (let key in message.actors) {
+            let act = message.actors[key]
 
-            var meshA = this.actor[key]
+            let meshA = this.actor[key]
 
             if (meshA === undefined || meshA.userData.chr !== act.chr) {
-                console.log('(re)initializing actor: ' + key)
+                console.log("(re)initializing actor: " + key)
                 if (meshA !== undefined) {
                     this.group.remove(meshA)
                 }
@@ -343,7 +343,7 @@ export class Level {
                 this.group.add(meshA)
             }
 
-            if (meshA.userData.chr === '@') {
+            if (meshA.userData.chr === "@") {
                 levelLookAt(this.camera, act.row, act.col)
                 this.playerLight.position.set(act.col * 64, 32, act.row * 64)
             }
@@ -358,15 +358,15 @@ export class Level {
         }
 
         // Update the message log
-        for (var i = message.messages.length - 1; i >= 0; i--) {
-            var pNode = document.createElement("p")
-            var textNode = document.createTextNode(message.messages[i])
+        for (let i = message.messages.length - 1; i >= 0; i--) {
+            let pNode = document.createElement("p")
+            let textNode = document.createTextNode(message.messages[i])
             pNode.appendChild(textNode)
             document.getElementById("messages").appendChild(pNode)
         }
 
         if (message.messages.length > 0) {
-            var messagesNode = document.getElementById("messages")
+            let messagesNode = document.getElementById("messages")
             messagesNode.scrollTop = messagesNode.scrollHeight  
         }       
     }
