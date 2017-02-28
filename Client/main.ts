@@ -1,13 +1,14 @@
-const {app, BrowserWindow} = require('electron')
+import * as electron from 'electron'
+import {app, BrowserWindow} from 'electron'
 
-const path = require('path')
-const url = require('url')
+import * as path from 'path'
+import * as url from 'url'
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let win
+let win: Electron.BrowserWindow
 
-function createWindow () {
+function createWindow(): void {
     // Create the browser window.
     win = new BrowserWindow({width: 1680, height: 1050, icon: "ui/icon.png"})
     win.setMenu(null);
@@ -56,5 +57,3 @@ app.on('activate', () => {
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

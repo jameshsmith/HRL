@@ -11,6 +11,7 @@
         "level.ts",
         "inventory.ts",
         "spellbook.ts",
-        "index.ts"
+        "index.ts",
+        "main.ts"
     ]
 }

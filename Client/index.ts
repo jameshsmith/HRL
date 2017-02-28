@@ -1,3 +1,4 @@
+import * as electron from "electron"
 
 import net = require("net")
 import fs = require("fs")

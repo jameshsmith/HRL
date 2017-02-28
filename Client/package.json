@@ -4,11 +4,15 @@
   "description": "Electron.io UI for Abyss Aeternum, a Haskell roguelike.",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "prestart": "npm run build",
+    "start": ".\\node_modules\\electron\\dist\\electron.exe ."
   },
   "author": "James H. Smith",
   "license": "MIT",
   "devDependencies": {
+    "@types/electron": "^1.4.33",
     "@types/node": "^7.0.5",
     "@types/three": "^0.83.4",
     "electron": "^1.4.15",
