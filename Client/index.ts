@@ -9,8 +9,6 @@ import {Inventory} from "./inventory"
 import {Spellbook} from "./spellbook"
 import {Level, LevelUpdate} from "./level"
 
-exports = {}
-
 let spellbook: Spellbook
 let inventory: Inventory
 let level: Level
