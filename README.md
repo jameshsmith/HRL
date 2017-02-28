@@ -1,5 +1,5 @@
 # A Haskell Roguelike
 
-*(With some javascript as well...)*
+*(With some TypeScript as well...)*
 
 ![Screenshot](/Screenshot/HRL3.png)
