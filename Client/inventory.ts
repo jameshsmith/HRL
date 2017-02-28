@@ -1,5 +1,4 @@
 import {Frame} from "./frame"
-const tooltip = require("./tooltip.js")
 
 /* Create the inventory grid as an r by 8 table. Returns a <div>
  * containing the <table> element. */

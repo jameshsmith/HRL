@@ -4,7 +4,7 @@ const JsonSocket = require('json-socket')
 
 const {Frame} = require('./frame.js')
 
-const Spellbook = require('./spellbook.js')
+const {Spellbook} = require('./spellbook.js')
 var spellbook = {}
 
 const {Inventory} = require('./inventory.js')
@@ -181,7 +181,7 @@ function canvasMouseMove (event) {
 
 function canvasClick (event) {
     if (!waiting) {
-        socket.sendMessage(actionMessage({"name": spellbook.spell(), "row": selectedR, "col": selectedC}))
+        socket.sendMessage(actionMessage({"name": spellbook.spell, "row": selectedR, "col": selectedC}))
     }
 }
 
