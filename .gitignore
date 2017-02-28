@@ -23,6 +23,8 @@ Server/dist/
 # Compiled Executables
 *.exe
 
-# Typings
+# TS things
 *.d.ts
-Client/typings/
+
+# Compiled JS
+*.js
