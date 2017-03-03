@@ -415,7 +415,6 @@ export class Level {
             if (isHash(message.visible[item.row].charAt(item.col))) {
                 obj.visible = true
             } else {
-                console.log("Hiding item " + item.name)
                 obj.visible = false
             }
         }
