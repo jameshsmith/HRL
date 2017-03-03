@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings, ViewPatterns #-}
 module Abyss.Item
     ( Item
-    , itemName
-    , itemDesc
-    , itemModifier
+    , name
+    , desc
+    , modifier
     , Inventory (..)
     , inventoryJSON
     , longsword
@@ -11,6 +11,8 @@ module Abyss.Item
     , longswordP2
     , longswordP3
     , leatherArmor
+    , greenPotion
+    , redPotion
     ) where
 
 import Prelude hiding ((.), id)
@@ -34,14 +36,14 @@ data Item = Item
     , _modifier :: ECS.Entity -> ECS.Entity
     }
 
-itemName :: Item -> Text
-itemName = _name
+name :: Item -> IRef
+name = unsafeIRef . _name
 
-itemDesc :: Item -> Text
-itemDesc = _desc
+desc :: Item -> Text
+desc = _desc
 
-itemModifier :: Item -> ECS.Entity -> ECS.Entity
-itemModifier = _modifier
+modifier :: Item -> ECS.Entity -> ECS.Entity
+modifier = _modifier
 
 newtype Inventory = Inventory (Map Text Int)
 
@@ -91,4 +93,9 @@ armor :: Int -> Topped Int -> ECS.Entity -> ECS.Entity
 armor x y =
     ECS.modify (modL defense (+ x))
     >>> ECS.modify (modL (maxBonus DEX) (min y))
-    
+
+greenPotion :: Item
+greenPotion = Item "Green Potion" "Smells like lime" id
+
+redPotion :: Item
+redPotion = Item "Red Potion" "Smells like strawberry" id

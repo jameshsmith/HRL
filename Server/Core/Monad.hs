@@ -3,7 +3,7 @@
 -- | In this module, we define the Monad in which game actions occur.
 module Core.Monad
     ( -- * The Game monad
-      Game, runGame
+      Game, runGame, runGameState
     , Result (..)
     -- * Dice and random numbers
     , roll, coin, d4, d6, d8, d10, d12, d20, d24, d30, d100
@@ -69,6 +69,9 @@ instance Functor (Result k l) where
 -- 'Result' functor.
 newtype Game k l a =
   Game { runGame :: State l (Result k l a) }
+
+runGameState :: Game k l a -> l -> (Result k l a, l)
+runGameState = runState . runGame
 
 instance Functor (Game k l) where
   fmap f (Game m) = Game (fmap (fmap f) m)
@@ -285,7 +288,7 @@ rollTable tbl = do
     return $ fromTable tbl n
 
 fromTable :: Table a -> Int -> a
-fromTable [] _ = error "Empty table"
+fromTable [] n = error ("Empty table: rolled " ++ show n)
 fromTable ((n, x) : tbl') m
   | m <= n    = x
   | otherwise = fromTable tbl' (m - n) 

@@ -44,6 +44,13 @@ interface Actor {
     chr: string
 }
 
+interface Item {
+    row: number
+    col: number
+    name: string
+    count: number
+}
+
 interface ActorMap {
     [name: string]: Actor
 }
@@ -54,6 +61,7 @@ export interface LevelUpdate {
     visible: string[]
     actors: ActorMap
     messages: string[]
+    items: Item[]
 }
 
 export class Level {
@@ -62,14 +70,17 @@ export class Level {
     private visible: THREE.Object3D[][] = new Array(41)
     private seen: THREE.Object3D[][] = new Array(41)
     private actor: ObjectMap = {}
+    private items: THREE.Object3D[][] = new Array(41)
 
     private visibleMats: MaterialMap = {}
     private seenMats: MaterialMap = {}
     private actorMats: MaterialMap = {}
+    private itemMats: MaterialMap = {}
 
     private geoBox = new THREE.BoxGeometry(64, 64, 64)
     private geoFloor = new THREE.PlaneGeometry(64, 64)
     private geoActor = new THREE.PlaneGeometry(64, 64)
+    private geoItem = new THREE.PlaneGeometry(32, 32)
     private geoDoor = new THREE.BoxGeometry(64, 64, 8)
     private geoOpenDoor = new THREE.BoxGeometry(8,64,32)
 
@@ -90,6 +101,10 @@ export class Level {
 
         for (let i = 0; i < 41; i++) {
             this.seen[i] = new Array(41)
+        }
+
+        for (let i = 0; i < 41; i++) {
+            this.items[i] = new Array(41)
         }
 
         // Make sure the camera is orientated the right way
@@ -180,6 +195,15 @@ export class Level {
             this.actorMats[file] = actorMat
         }
 
+        files = fs.readdirSync('ui/item/')
+        for (let file of files) {
+            let tex = textureLoader.load("ui/item/" + file)
+            tex.magFilter = THREE.NearestFilter
+            tex.minFilter = THREE.NearestFilter
+
+            this.itemMats[file] = new THREE.MeshBasicMaterial({map: tex, transparent: true})
+        }
+
         let tex = textureLoader.load('textures/special/pentagram.png')
         tex.magFilter = THREE.NearestFilter
         tex.minFilter = THREE.NearestFilter
@@ -197,7 +221,7 @@ export class Level {
     /* ==================================================
        The static mesher: converts characters into 3D objects
        ================================================== */
-    private staticMesher (chr: string, r: number, c: number, ctx: string[], vis: boolean): THREE.Object3D {
+    private staticMesher(chr: string, r: number, c: number, ctx: string[], vis: boolean): THREE.Object3D {
         let obj: THREE.Object3D
 
         let mats
@@ -267,7 +291,7 @@ export class Level {
     /* ==================================================
        The actor mesher
        ================================================== */
-    private actorMesher (chr: string): THREE.Object3D {
+    private actorMesher(chr: string): THREE.Object3D {
         let mesh
 
         if (chr === '@') {
@@ -285,11 +309,25 @@ export class Level {
         mesh.userData.chr = chr
         return mesh
     }
-    
+
+    /* ==================================================
+       The item mesher
+       ================================================== */
+    private itemMesher(name: string, r: number, c: number): THREE.Object3D {
+        let mesh = new THREE.Mesh(this.geoItem, this.itemMats[name + ".png"])
+        mesh.position.set(64 * c, -16, 64 * r)        
+        mesh.rotation.x = this.camera.rotation.x
+        mesh.rotation.y = this.camera.rotation.y
+        mesh.rotation.z = this.camera.rotation.z
+        mesh.userData.name = name
+
+        return mesh
+    }
+
     /* ================================================== 
        Update the level from a JSON message
        ================================================== */
-    public update (message: LevelUpdate) {
+    public update(message: LevelUpdate) {
         // Update the statics
         for (let r = 0; r < 41; r++) {
             for (let c = 0; c < 41; c++) {
@@ -354,6 +392,31 @@ export class Level {
                 meshA.position.x = act.col * 64
             } else {
                 meshA.visible = false
+            }
+        }
+
+        // Update items
+        for (let item of message.items) {
+            let obj = this.items[item.row][item.col]
+
+            if (obj == null) {
+                console.log("Initialising item: " + item.name)
+                obj = this.itemMesher(item.name, item.row, item.col)
+                this.items[item.row][item.col] = obj
+                this.group.add(obj)
+            } else if (obj.userData.name != item.name) {
+                console.log("Reinitialising item!")
+                this.group.remove(obj)
+                obj = this.itemMesher(item.name, item.row, item.col)
+                this.items[item.row][item.col] = obj
+                this.group.add(obj)
+            }
+
+            if (isHash(message.visible[item.row].charAt(item.col))) {
+                obj.visible = true
+            } else {
+                console.log("Hiding item " + item.name)
+                obj.visible = false
             }
         }
 

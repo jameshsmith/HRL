@@ -104,7 +104,7 @@ evalGame hdl sav conn exitContinuation = load sav initGame defaultLevel 1 0
 
     go :: Game Action Level () -> Level -> Int -> StdGen -> IO ()
     go g l n gen = do
-        let (res, l') = (runState . runGame) g l
+        let (res, l') = runGameState g l
         case res of
             Turn cont -> do
                 sendJSON conn (RespondLevel l')

@@ -1,6 +1,7 @@
 {-# LANGUAGE TupleSections, TypeOperators, ViewPatterns, OverloadedStrings #-}
 module Core.Engine
     ( ARef
+    , IRef, unsafeIRef, unIRef
     , Level
     , Status
     , Actor
@@ -20,7 +21,7 @@ module Core.Engine
     , opacity, visible, shadowCast, seen, solid
     , statics, static, staticChar
     , message, messageLog, clearMessages
-    , floorItems
+    , floorItem
     , runEffects
     , cast
     , defaultLevel
@@ -54,6 +55,11 @@ import qualified Data.Vector as V
 
 newtype ARef = ARef Int deriving (Eq, Ord, Show)
 
+newtype IRef = IRef { unIRef :: Text } deriving (Eq, Ord, Show)
+
+unsafeIRef :: Text -> IRef
+unsafeIRef = IRef
+
 data Level = Level
     { _opacity    :: UArray (Row, Col) Bool
     , _visible    :: UArray (Row, Col) Bool
@@ -66,7 +72,7 @@ data Level = Level
     , _actors     :: IntMap Actor
     , _effects    :: IntMap Effect
     , _peffects   :: IntMap Effect  -- Processed effects
-    , _items      :: Map (Row, Col) (Map Text Int)
+    , _items      :: Map (Row, Col) (IRef, Int)
     , _statics    :: Array (Row, Col) (Char, Entity)
     , _playerDMap :: DijkstraMap
     , _messageLog :: [Text]
@@ -206,12 +212,11 @@ clearMessages l = l { _messageLog = [] }
 messageLog :: Level -> [Text]
 messageLog = _messageLog
 
-floorItems :: (Row, Col) -> Level :~> Map Text Int
-floorItems p = unsafeWeakLens (lens (Map.findWithDefault Map.empty p . _items) set)
+floorItem :: (Row, Col) -> Level :~> Maybe (IRef, Int)
+floorItem p = unsafeWeakLens (lens (Map.lookup p . _items) set)
   where
-    set v l
-      | Map.null v = l { _items = Map.delete p (_items l) }
-      | otherwise  = l { _items = Map.insert p v (_items l) }
+    set Nothing     l = l { _items = Map.delete p (_items l) }
+    set (Just iref) l = l { _items = Map.insert p iref (_items l) }
 
 data Effect = Effect
     { effectDispel :: Maybe (Game () Level ())
@@ -294,11 +299,12 @@ actorToJSON entityToJSON actor = J.object
   , ("entity", entityToJSON (_aentity actor))
   ]
 
-itemsToJSON :: (Row, Col) -> Map Text Int -> J.Value
-itemsToJSON (r, c) inv = J.object
+itemToJSON :: (Row, Col) -> (IRef, Int) -> J.Value
+itemToJSON (r, c) (IRef item, n) = J.object
   [ ("row", J.toJSON r)
   , ("col", J.toJSON c)
-  , ("items", J.toJSON inv)
+  , ("name", J.toJSON item)
+  , ("count", J.toJSON n)
   ]
 
 arefJSON :: ARef -> Text
@@ -317,7 +323,7 @@ levelToJSON entityToJSON lev = J.object
     , ("visible", arrayToJSON boolChar (_visible lev))
     , ("seen", arrayToJSON boolChar (_seen lev))
     , ("actors", actorsToJSON entityToJSON (_actors lev))
-    , ("items", J.toJSON (Map.elems (Map.mapWithKey itemsToJSON (_items lev))))
+    , ("items", J.toJSON (Map.elems (Map.mapWithKey itemToJSON (_items lev))))
     , ("messages", J.toJSON (_messageLog lev))
     ]
   where

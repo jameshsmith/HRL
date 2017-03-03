@@ -4,6 +4,8 @@ module Gen.Level where
 import Prelude hiding ((.), id)
 
 import Abyss.Stats
+import Abyss.Item (Item)
+import qualified Abyss.Item as Item
 import Core.Types
 import Core.Monad
 import Core.Engine
@@ -19,7 +21,6 @@ import Control.Monad.Trans.State
 import Data.Array.Unboxed
 import Data.Maybe (listToMaybe)
 import System.Random
-import Data.Text (Text)
 
 zombie :: ECS.Entity
 zombie =
@@ -56,7 +57,7 @@ data LevelSpec = LevelSpec
     , monsterCount :: Int
     , monsterTable :: Table Egg
     , itemCount    :: Int
-    , itemTable    :: Table (Text, Dice)
+    , itemTable    :: Table (Item, Dice)
     }
     
 isSolid :: Char -> Bool
@@ -94,6 +95,16 @@ loadLevel spec = do
     -- entering the level.
     let monSpots = filter (\p -> manhattan p playerLoc >= 6) freeSpots
 
+    forM_ [1..(itemCount spec)] $ \_ -> do
+        itemLoc <- pickNonEmpty freeSpots
+        occupier <- getL (weak (floorItem itemLoc)) <$> level
+        case occupier of
+            Just _ -> return ()
+            Nothing -> do
+                (item, d) <- rollTable (itemTable spec)
+                n <- dice d
+                floorItem itemLoc != Just (Item.name item, n)
+    
     forM_ [1..50] $ \_ -> do
         spawnLoc <- pickNonEmpty monSpots
         occupier <- listToMaybe . living (\a -> a ^. loc == spawnLoc) <$> level

@@ -4,6 +4,7 @@ module Abyss.Game (initGame, Action (..)) where
 import Prelude hiding ((.), id)
 
 import Abyss.Stats
+import qualified Abyss.Item as Item
 import qualified Abyss.Spell as Spell
 import Core.Types
 import Core.Engine
@@ -117,8 +118,11 @@ levelOne = LevelSpec
     , initializer  = defaultInitializer
     , monsterCount = 0
     , monsterTable = []
-    , itemCount    = 0
-    , itemTable    = []
+    , itemCount    = 40
+    , itemTable    = [ (10, (Item.longswordP2, 1))
+                     , (10, (Item.greenPotion, 1))
+                     , (10, (Item.redPotion, 1))
+                     ]
     }
 
 initGame :: Game Action Level ()
