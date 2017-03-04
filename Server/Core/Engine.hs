@@ -21,9 +21,10 @@ module Core.Engine
     , opacity, visible, shadowCast, seen, solid
     , statics, static, staticChar
     , message, messageLog, clearMessages
-    , floorItem
+    , floorItem, addItem
     , runEffects
     , cast
+    , Inventory (..)
     , defaultLevel
     , arefJSON
     , actorToJSON
@@ -49,6 +50,7 @@ import qualified Data.Map as Map
 import Data.Maybe (listToMaybe)
 
 import qualified Data.Aeson as J
+import qualified Data.Aeson.Encoding as J
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -56,6 +58,12 @@ import qualified Data.Vector as V
 newtype ARef = ARef Int deriving (Eq, Ord, Show)
 
 newtype IRef = IRef { unIRef :: Text } deriving (Eq, Ord, Show)
+
+instance J.ToJSONKey IRef where
+  toJSONKey = J.ToJSONKeyText unIRef (J.text . unIRef)
+
+instance J.ToJSON IRef where
+  toJSON (IRef name) = J.toJSON name
 
 unsafeIRef :: Text -> IRef
 unsafeIRef = IRef
@@ -252,6 +260,17 @@ runEffects' = do
                     peffects %= IMap.insert key (Effect d act')
                     runEffects'
 
+newtype Inventory = Inventory (Map IRef Int)
+
+addItem :: (IRef, Int) -> Inventory -> Inventory
+addItem (item, n) (Inventory items) = Inventory $ Map.unionWith (+) items (Map.singleton item n)
+
+instance ECS.Component Inventory where
+  stock = Inventory Map.empty
+
+instance J.ToJSON Inventory where
+  toJSON (Inventory i) = J.toJSON i
+
 defaultFloor' :: UArray (Row, Col) Char
 defaultFloor' = listArray ((0,0), (length dun - 1, length (head dun) - 1)) (concat dun)
   where
@@ -324,6 +343,7 @@ levelToJSON entityToJSON lev = J.object
     , ("seen", arrayToJSON boolChar (_seen lev))
     , ("actors", actorsToJSON entityToJSON (_actors lev))
     , ("items", J.toJSON (Map.elems (Map.mapWithKey itemToJSON (_items lev))))
+    , ("inventory", J.toJSON (getL (weak (actor player)) lev :: Inventory))
     , ("messages", J.toJSON (_messageLog lev))
     ]
   where

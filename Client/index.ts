@@ -49,8 +49,10 @@ interface Message {
 
 function updateMessage(message: Message): void {
     if (message.type === "level") {
-        console.log(message.payload)
-        level.update(<LevelUpdate>message.payload)
+        let payload = <LevelUpdate>message.payload
+        console.log(payload)
+        level.update(payload)
+        inventory.update(payload.inventory)
     } else if (message.type === "loading") {
         console.log("Loading: " + message.payload)
     }
@@ -81,6 +83,9 @@ function handleKeyPress(event: KeyboardEvent): void {
             socket.sendMessage(actionMessage({"move": "S"}))    
         } else if (event.key === "a") {
             socket.sendMessage(actionMessage({"move": "W"}))
+        } else if (event.key === "p") {
+            socket.sendMessage(actionMessage({"row": level.playerRow(), "col": level.playerCol()}))
+            level.clearItem(level.playerRow(), level.playerCol())
         } else if (event.key === " ") {
             socket.sendMessage(actionMessage("skip"))
         } else if (event.key === "t") {
@@ -163,7 +168,9 @@ function initTHREE(): void {
 
     renderer.domElement.addEventListener("mousemove", canvasMouseMove)
     renderer.domElement.addEventListener("click", canvasClick)
-    
+    //renderer.domElement.draggable = true
+    //renderer.domElement.addEventListener("dragstart", canvasDragStart)
+
     document.body.appendChild(renderer.domElement)
 }
 

@@ -203,3 +203,8 @@ newtype Hurt = Hurt { hurt :: Int } deriving (Eq, Ord, Num)
 
 instance ECS.Component Hurt where
   stock = Hurt 0
+
+newtype Telekinesis = Telekinesis Int
+
+instance ECS.Component Telekinesis where
+  stock = Telekinesis 1

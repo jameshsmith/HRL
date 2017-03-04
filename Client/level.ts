@@ -1,4 +1,5 @@
 import fs = require("fs")
+import {InventoryUpdate} from "./inventory"
 
 function isHash (chr : string) {
     if (chr === "#") {
@@ -62,6 +63,7 @@ export interface LevelUpdate {
     actors: ActorMap
     messages: string[]
     items: Item[]
+    inventory: InventoryUpdate
 }
 
 export class Level {
@@ -86,6 +88,8 @@ export class Level {
 
     private camera: THREE.Camera
     private playerLight: THREE.Light
+    private playerR: number
+    private playerC: number
 
     constructor (camera: THREE.Camera, textureLoader: THREE.TextureLoader, playerLight: THREE.Light) {
         this.group.add(playerLight)
@@ -383,6 +387,8 @@ export class Level {
 
             if (meshA.userData.chr === "@") {
                 levelLookAt(this.camera, act.row, act.col)
+                this.playerR = act.row
+                this.playerC = act.col
                 this.playerLight.position.set(act.col * 64, 32, act.row * 64)
             }
             
@@ -432,5 +438,21 @@ export class Level {
             messagesNode.scrollTop = messagesNode.scrollHeight  
         }       
     }
+
+    public clearItem(r, c) {
+        if (this.items[r][c] != undefined) {
+            this.group.remove(this.items[r][c])
+            this.items[r][c] = null
+        }
+    }
     
+    public playerRow(): number {
+        return this.playerR
+    }
+
+    public playerCol(): number {
+        return this.playerC
+    }
+
+
 }

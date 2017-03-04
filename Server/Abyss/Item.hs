@@ -25,8 +25,6 @@ import qualified Core.ECS as ECS
 import Component.Name
 import Component.Modifier
 
-import Data.Map (Map)
-import qualified Data.Map as Map
 import Data.Text (Text)
 import qualified Data.Aeson as J
 
@@ -44,14 +42,6 @@ desc = _desc
 
 modifier :: Item -> ECS.Entity -> ECS.Entity
 modifier = _modifier
-
-newtype Inventory = Inventory (Map Text Int)
-
-instance ECS.Component Inventory where
-  stock = Inventory Map.empty
-
-instance J.ToJSON Inventory where
-  toJSON (Inventory i) = J.toJSON i
 
 inventoryJSON :: (Row, Col) -> Level -> J.Value
 inventoryJSON l lev = J.object $

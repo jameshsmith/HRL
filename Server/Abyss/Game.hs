@@ -4,6 +4,7 @@ module Abyss.Game (initGame, Action (..)) where
 import Prelude hiding ((.), id)
 
 import Abyss.Stats
+import Abyss.Item (Item)
 import qualified Abyss.Item as Item
 import qualified Abyss.Spell as Spell
 import Core.Types
@@ -42,6 +43,7 @@ data Action = Move Dir4
             | Skip
             | Activate Dir4
             | Cast Text (Row, Col)
+            | Pickup (Row, Col)
             deriving Show
 
 parseDir4 :: MonadPlus m => Text -> m Dir4
@@ -66,6 +68,10 @@ instance J.FromJSON Action where
           r <- obj .: "row"
           c <- obj .: "col"
           return (Cast n (r, c))
+      , flip (J.withObject "pickup") v $ \obj -> do
+          r <- obj .: "row"
+          c <- obj .: "col"
+          return (Pickup (r, c))
       ]
 
 putText :: S.Putter Text
@@ -80,13 +86,15 @@ instance S.Serialize Action where
   put (Move d)     = S.putWord8 0x00 >> S.put d
   put Skip         = S.putWord8 0x01
   put (Activate d) = S.putWord8 0x02 >> S.put d
-  put (Cast s l)   = S.putWord8 0x03 >> putText s >> S.put l 
+  put (Cast s l)   = S.putWord8 0x03 >> putText s >> S.put l
+  put (Pickup l)   = S.putWord8 0x04 >> S.put l
 
   get = S.getWord8 >>= \case
       0x00 -> Move <$> S.get
       0x01 -> return Skip
       0x02 -> Activate <$> S.get
       0x03 -> Cast <$> getText <*> S.get
+      0x04 -> Pickup <$> S.get
       _    -> error "Invalid action!"
 
 rooms :: [(Int, Int)]
@@ -125,11 +133,15 @@ levelOne = LevelSpec
                      ]
     }
 
+inventoryList :: [(Item, Int)] -> Inventory
+inventoryList items = Inventory (Map.fromList (map (\(item, count) -> (Item.name item, count)) items))
+
 initGame :: Game Action Level ()
 initGame = do
     loadLevel levelOne
 
     actor player != Name "Player"
+    actor player != inventoryList [(Item.longswordP2, 1), (Item.redPotion, 32)]
 
     game
 
@@ -174,3 +186,13 @@ handleAct (Cast sname l) =
             case occupier of
                 Just mon -> cast (eff mon)
                 Nothing -> cast Spell.fizzleEffect
+
+handleAct (Pickup l) =
+    access (floorItem l) >>= \case
+        Nothing -> return ()
+        Just item -> do
+            pLoc <- access (loc <# aref player)
+            (Telekinesis distance) <- modified player
+            if manhattan l pLoc > distance
+                then message "Item is too far" >> return ()
+                else floorItem l != Nothing >> actor player %= addItem item

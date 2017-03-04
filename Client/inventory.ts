@@ -120,8 +120,10 @@ export class Inventory extends Frame {
             let img = document.createElement("img")
             img.src = "ui/item/" + this.items[loc].name + ".png"
             let count = document.createTextNode(this.items[loc].count.toString())
+            let span = document.createElement("span")
+            span.appendChild(count)
             td.appendChild(img)
-            td.appendChild(count)
+            td.appendChild(span)
         }
     }
 
