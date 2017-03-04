@@ -58,6 +58,24 @@ td span {
     -webkit-user-drag: none;
 }
 
+.hpbar {
+    position: fixed;
+    bottom: 53px;
+    margin-left: 13px;
+    left: 50%;
+    width: 330px;
+    height: 15px;
+}
+
+.manabar {
+    position: fixed;
+    bottom: 53px;
+    margin-left: -343px;
+    left: 50%;
+    width: 330px;
+    height: 15px;
+}
+
 .playerimg {
     position: fixed;
     bottom: 5px;
