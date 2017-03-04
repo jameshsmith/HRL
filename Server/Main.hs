@@ -23,7 +23,6 @@ import qualified System.Exit as Exit
 import System.IO
 import System.IO.Error
 import System.Random (StdGen, getStdGen, randomR)
-import System.CPUTime
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
@@ -88,12 +87,10 @@ evalGame :: Handle
          -> Socket
          -> IO ()
          -> IO ()
-evalGame hdl sav conn exitContinuation = do
-    getCPUTime >>= (\t -> putStrLn ("starting at: " ++ show t))
-    load sav initGame defaultLevel 1 0
+evalGame hdl sav conn exitContinuation = load sav initGame defaultLevel 1 0
   where
     load :: [Input] -> Game Action Level () -> Level -> Int -> Int -> IO ()
-    load [] g l n _ = (getCPUTime >>= (\t -> putStrLn ("stopping at: " ++ show t))) >> sendJSON conn (RespondLoading 100) >> getStdGen >>= go g l n
+    load [] g l n _ = sendJSON conn (RespondLoading 100) >> getStdGen >>= go g l n
     load (cmd : cmds) g l n m = do
         let (res, l') = (runState . runGame) g l
         when (m `mod` 1000 == 0) $ sendJSON conn (RespondLoading ((m * 100) `div` length sav))

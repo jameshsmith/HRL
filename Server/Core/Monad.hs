@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, ViewPatterns #-}
+{-# LANGUAGE TypeOperators, ViewPatterns, GeneralizedNewtypeDeriving #-}
 
 -- | In this module, we define the Monad in which game actions occur.
 module Core.Monad
@@ -43,35 +43,43 @@ instance Functor (Result k) where
   fmap f (Dice n cont) = Dice n (f . cont)
   fmap f (Gen g cont)  = Gen g (f . cont)
 
-type Game k l = FreeT (Result k) (State l)
+newtype Game k l a = Game (FreeT (Result k) (State l) a) deriving (Functor, Applicative, Monad)
 
 runGame :: Game k l a -> State l (FreeF (Result k) a (Game k l a))
-runGame = runFreeT
+runGame (Game m) = fmap (fmap Game) $ runFreeT m
 
 runGameState :: Game k s a -> s -> (FreeF (Result k) a (Game k s a), s)
 runGameState = runState . runGame
 
-noTurn :: Game () l a -> Game k l a
-noTurn m = FreeT $ do
-    res <- runGame m
+noTurn' :: Monad m => FreeT (Result ()) m a -> FreeT (Result k) m a
+noTurn' m = FreeT $ do
+    res <- runFreeT m
     case res of
         Pure x -> return (Pure x)
-        Free (Turn cont)   -> runGame (noTurn (cont ()))
-        Free (Unique cont) -> return . Free $ Unique (noTurn . cont)
-        Free (YesNo cont)  -> return . Free $ YesNo (noTurn . cont)
-        Free (Dice n cont) -> return . Free $ Dice n (noTurn . cont)
-        Free (Gen g cont)  -> return . Free $ Gen g (noTurn . cont)
+        Free (Turn cont)   -> runFreeT (noTurn' (cont ()))
+        Free (Unique cont) -> return . Free $ Unique (noTurn' . cont)
+        Free (YesNo cont)  -> return . Free $ YesNo (noTurn' . cont)
+        Free (Dice n cont) -> return . Free $ Dice n (noTurn' . cont)
+        Free (Gen g cont)  -> return . Free $ Gen g (noTurn' . cont)
+
+noTurn :: Game () l a -> Game k l a
+noTurn (Game m) = Game (noTurn' m)
+{-# INLINE noTurn #-}
+
+rollMinMax' :: Monad m => ((Int, Int) -> Int) -> FreeT (Result k) m a -> FreeT (Result k) m a
+rollMinMax' f m = FreeT $ do
+    res <- runFreeT m
+    case res of
+        Pure x -> return (Pure x)
+        Free (Turn cont)   -> return . Free $ Turn (rollMinMax' f . cont)
+        Free (Unique cont) -> return . Free $ Unique (rollMinMax' f . cont)
+        Free (YesNo cont)  -> return . Free $ YesNo (rollMinMax' f . cont)
+        Free (Dice n cont) -> runFreeT $ rollMinMax' f (cont (f n))
+        Free (Gen g cont)  -> return . Free $ Gen g (rollMinMax' f . cont)
 
 rollMinMax :: ((Int, Int) -> Int) -> Game k l a -> Game k l a
-rollMinMax f m = FreeT $ do
-    res <- runGame m
-    case res of
-        Pure x -> return (Pure x)
-        Free (Turn cont)   -> return . Free $ Turn (rollMinMax f . cont)
-        Free (Unique cont) -> return . Free $ Unique (rollMinMax f . cont)
-        Free (YesNo cont)  -> return . Free $ YesNo (rollMinMax f . cont)
-        Free (Dice n cont) -> runGame $ rollMinMax f (cont (f n))
-        Free (Gen g cont)  -> return . Free $ Gen g (rollMinMax f . cont)
+rollMinMax f (Game m) = Game (rollMinMax' f m)
+{-# INLINE rollMinMax #-}
 
 rollMax :: Game k l a -> Game k l a
 rollMax = rollMinMax snd
@@ -104,7 +112,7 @@ d100 = (1,100)
 
 -- | Get a random number between two values inclusive.
 roll :: (Int, Int) -> Game k l Int
-roll d = liftF $ Dice d id
+roll d = Game . liftF $ Dice d id
 
 data Dice = Roll Int (Int, Int)
           | Plus Dice Dice
@@ -155,38 +163,41 @@ coin = (==) 1 <$> roll (0, 1)
 
 -- | Ask the player a yes/no question.
 yesNo :: Game k l Bool
-yesNo = liftF $ YesNo id
+yesNo = Game . liftF $ YesNo id
 
 -- | End the turn, and return a new action.
 turn :: Game k l k
-turn = liftF $ Turn id
+turn = Game . liftF $ Turn id
 
 -- | Generate a level
 generate :: State StdGen (UArray (Row, Col) Char) -> Game k l (UArray (Row, Col) Char)
-generate g = liftF $ Gen g id
+generate g = Game . liftF $ Gen g id
 
 -- | Get a globally unique integer.
 uniqueInt :: Game k l Int
-uniqueInt = liftF $ Unique id
+uniqueInt = Game . liftF $ Unique id
+
+liftState :: State l a -> Game k l a
+liftState = Game . lift
 
 infixr 3 !=, !!=, %=, %%=, ~=, ~~=
 
 -- | Set the value of some lens into the Game state.
 (!=) :: l :~> a -> a -> Game k l ()
-(weak -> l) != v = void (lift (l Lens.!= v))
+(weak -> l) != v = void (liftState (l Lens.!= v))
 
 (!!=) :: l :~> a -> a -> Game k l a
-(weak -> l) !!= v = lift (l Lens.!= v) 
+(weak -> l) !!= v = liftState (l Lens.!= v) 
 
 -- | Modify the value of some lens into the Game state.
 (%=) :: l :~> a -> (a -> a) -> Game k l ()
-(weak -> l) %= f = void (lift (l Lens.%= f))
+(weak -> l) %= f = void (liftState (l Lens.%= f))
 
 (%%=) :: l :~> a -> (a -> a) -> Game k l a
-(weak -> l) %%= f = lift (l Lens.%= f)
+(weak -> l) %%= f = liftState (l Lens.%= f)
 
 modifyLevel :: (l -> l) -> Game k l ()
-modifyLevel f = lift (modify f)
+modifyLevel f = liftState (modify f)
 
 -- | Set the value of some lens into the Game state, using a game
 -- action.
@@ -204,10 +215,10 @@ l ##= m = do { v <- access l; l ~~= m v }
 
 -- | Access some part of the game state.
 access :: l :~> a -> Game k l a
-access = lift . Lens.access . weak
+access = liftState . Lens.access . weak
 
 level :: Game k l l
-level = lift (Lens.access id)
+level = liftState (Lens.access id)
 
 -- | Perform a game action with some part of the game state.
 with :: l :~> a -> (a -> Game k l b) -> Game k l b
@@ -215,7 +226,7 @@ with l f = f =<< access l
 
 -- | Read part of the state using an accessor function.
 rd :: (l -> a) -> Game k l a
-rd f = f <$> (lift . Lens.access) id
+rd f = f <$> (liftState . Lens.access) id
 
 pick :: a -> [a] -> Game k l a
 pick x xs@(length -> l) = ((x:xs) !!) <$> roll (0, l)
@@ -234,4 +245,4 @@ fromTable :: Table a -> Int -> a
 fromTable [] n = error ("Empty table: rolled " ++ show n)
 fromTable ((n, x) : tbl') m
   | m <= n    = x
-  | otherwise = fromTable tbl' (m - n) 
+  | otherwise = fromTable tbl' (m - n)
