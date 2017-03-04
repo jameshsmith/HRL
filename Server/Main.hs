@@ -14,6 +14,7 @@ import Component.Modifier (selfModify)
 import Server.Save
 
 import Control.Monad
+import Control.Monad.Trans.Free
 import Control.Monad.State (runState)
 import Data.Maybe (listToMaybe)
 import System.Console.GetOpt
@@ -22,6 +23,7 @@ import qualified System.Exit as Exit
 import System.IO
 import System.IO.Error
 import System.Random (StdGen, getStdGen, randomR)
+import System.CPUTime
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
@@ -86,27 +88,29 @@ evalGame :: Handle
          -> Socket
          -> IO ()
          -> IO ()
-evalGame hdl sav conn exitContinuation = load sav initGame defaultLevel 1 0
+evalGame hdl sav conn exitContinuation = do
+    getCPUTime >>= (\t -> putStrLn ("starting at: " ++ show t))
+    load sav initGame defaultLevel 1 0
   where
     load :: [Input] -> Game Action Level () -> Level -> Int -> Int -> IO ()
-    load [] g l n _ = sendJSON conn (RespondLoading 100) >> getStdGen >>= go g l n
+    load [] g l n _ = (getCPUTime >>= (\t -> putStrLn ("stopping at: " ++ show t))) >> sendJSON conn (RespondLoading 100) >> getStdGen >>= go g l n
     load (cmd : cmds) g l n m = do
         let (res, l') = (runState . runGame) g l
         when (m `mod` 1000 == 0) $ sendJSON conn (RespondLoading ((m * 100) `div` length sav))
         case res of
-            Turn cont   | InputAct act <- cmd -> load cmds (cont act) l' n (m + 1)
-            YesNo cont  | InputYN b <- cmd    -> load cmds (cont b) l' n (m + 1)
-            Unique cont                       -> load (cmd : cmds) (cont n) l' (n + 1) (m + 1)
-            Dice _ cont | InputRoll r <- cmd  -> load cmds (cont r) l' n (m + 1)
-            Gen _ cont  | InputLev g <- cmd   -> load cmds (cont g) l' n (m + 1)
-            Result ()                         -> hClose hdl >> error "Unexpected return from game!"
-            _                                 -> hClose hdl >> error "Invalid save file"
+            Free (Turn cont)   | InputAct act <- cmd -> load cmds (cont act) l' n (m + 1)
+            Free (YesNo cont)  | InputYN b <- cmd    -> load cmds (cont b) l' n (m + 1)
+            Free (Unique cont)                       -> load (cmd : cmds) (cont n) l' (n + 1) (m + 1)
+            Free (Dice _ cont) | InputRoll r <- cmd  -> load cmds (cont r) l' n (m + 1)
+            Free (Gen _ cont)  | InputLev g <- cmd   -> load cmds (cont g) l' n (m + 1)
+            Pure () -> hClose hdl >> error "Unexpected return from game!"
+            _       -> hClose hdl >> error "Invalid save file"
 
     go :: Game Action Level () -> Level -> Int -> StdGen -> IO ()
     go g l n gen = do
         let (res, l') = runGameState g l
         case res of
-            Turn cont -> do
+            Free (Turn cont) -> do
                 sendJSON conn (RespondLevel l')
                 message <- talk conn l'
                 case message of
@@ -115,23 +119,23 @@ evalGame hdl sav conn exitContinuation = load sav initGame defaultLevel 1 0
                         BS.hPut hdl (S.encode (InputAct act))
                         go (cont act) (clearMessages l') n gen
 
-            YesNo cont -> do
+            Free (YesNo cont) -> do
                 BS.hPut hdl (S.encode (InputYN True))
                 go (cont True) l' n gen
           
-            Unique cont -> go (cont n) l' (n + 1) gen
+            Free (Unique cont) -> go (cont n) l' (n + 1) gen
           
-            Dice (lo, hi) cont -> do
+            Free (Dice (lo, hi) cont) -> do
                 let (r, gen') = randomR (lo, hi) gen
                 BS.hPut hdl (S.encode (InputRoll r))
                 go (cont r) l' n gen'
 
-            Gen generator cont -> do
+            Free (Gen generator cont) -> do
                 let (lev, gen') = runState generator gen
                 BS.hPut hdl (S.encode (InputLev lev))
                 go (cont lev) l' n gen'
                 
-            Result () -> return ()
+            Pure () -> return ()
 
 talk :: Socket -> Level -> IO (Maybe Action)
 talk conn lev = do

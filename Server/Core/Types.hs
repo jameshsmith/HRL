@@ -164,7 +164,7 @@ ixD d arr i | bounds arr `inRange` i = arr ! i
 --
 -- More abstractly we can think of @Fix f@ as a fixpoint of the
 -- functor @f@ given by its anamorphism. I suspect (but have not
--- proved) that this is equivalent to the traditional definition:
+-- proved) that this is isomorphic to the traditional definition:
 --
 -- > data FixA f = Fix { unFix :: (f (FixA f)) }
 --
