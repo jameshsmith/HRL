@@ -58,7 +58,7 @@ td span {
     -webkit-user-drag: none;
 }
 
-.hpbar {
+#hpbar {
     position: fixed;
     bottom: 53px;
     margin-left: 13px;
@@ -67,7 +67,7 @@ td span {
     height: 15px;
 }
 
-.manabar {
+#manabar {
     position: fixed;
     bottom: 53px;
     margin-left: -343px;

@@ -31,6 +31,20 @@ function levelLookAt (camera: THREE.Camera, r: number, c: number) : void {
     camera.position.z -= (lZ - tZ)
 }
 
+interface CharMap {
+    [chr: string]: string
+}
+
+let actorChars: CharMap = {
+    "Z": "zombie.png",
+    "@": "fighter.png",
+    "G": "ghost.png",
+    "S": "skeleton.png",
+    "B": "bat.png",
+    "s": "greenslime.png",
+    "c": "corpse.png"
+}
+
 interface MaterialMap {
     [name: string]: THREE.Material
 }
@@ -43,6 +57,12 @@ interface Actor {
     row: number
     col: number
     chr: string
+    entity: ActorEntity
+}
+
+interface ActorEntity {
+    hp: number
+    hurt: number
 }
 
 interface Item {
@@ -90,6 +110,8 @@ export class Level {
     private playerLight: THREE.Light
     private playerR: number
     private playerC: number
+
+    private playerHPBar: HTMLImageElement
 
     constructor (camera: THREE.Camera, textureLoader: THREE.TextureLoader, playerLight: THREE.Light) {
         this.group.add(playerLight)
@@ -220,6 +242,8 @@ export class Level {
            ================================================== */
         this.geoFloor.rotateX(- (Math.PI / 2))
         this.geoFloor.translate(0, -32, 0)
+
+        this.playerHPBar = <HTMLImageElement>document.getElementById("hpbar")
     }
 
     /* ==================================================
@@ -228,7 +252,7 @@ export class Level {
     private staticMesher(chr: string, r: number, c: number, ctx: string[], vis: boolean): THREE.Object3D {
         let obj: THREE.Object3D
 
-        let mats
+        let mats: MaterialMap
         if (vis) {
             mats = this.visibleMats
         } else {
@@ -298,13 +322,11 @@ export class Level {
     private actorMesher(chr: string): THREE.Object3D {
         let mesh
 
-        if (chr === '@') {
-            mesh = new THREE.Mesh(this.geoActor, this.actorMats['fighter.png'])
-        } else if (chr === 'Z') {
-            mesh = new THREE.Mesh(this.geoActor, this.actorMats['zombie.png'])
-        } else {
+        if (chr === 'c') {
             mesh = new THREE.Mesh(this.geoActor, this.actorMats['corpse.png'])
             mesh.position.y -= 1
+        } else {
+            mesh = new THREE.Mesh(this.geoActor, this.actorMats[actorChars[chr]])
         }
         
         mesh.rotation.x = this.camera.rotation.x
@@ -386,10 +408,19 @@ export class Level {
             }
 
             if (meshA.userData.chr === "@") {
+                // Keep the camera focused on the player
                 levelLookAt(this.camera, act.row, act.col)
+
                 this.playerR = act.row
                 this.playerC = act.col
                 this.playerLight.position.set(act.col * 64, 32, act.row * 64)
+
+                // Adjust the player's HP bar
+                if (act.entity.hp - act.entity.hurt <= 0) {
+                    this.playerHPBar.style.width = "0px"
+                } else {
+                    this.playerHPBar.style.width = Math.floor((act.entity.hp - act.entity.hurt) / act.entity.hp * 330) + "px"
+                }
             }
             
             if (isHash(message.visible[act.row].charAt(act.col))) {
@@ -453,6 +484,5 @@ export class Level {
     public playerCol(): number {
         return this.playerC
     }
-
 
 }

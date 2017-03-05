@@ -18,6 +18,7 @@ module Core.Engine
     , corpses
     , actor, actorChar
     , playerDMap
+    , pathGrid, pathfind
     , opacity, visible, shadowCast, seen, solid
     , statics, static, staticChar
     , message, messageLog, clearMessages
@@ -37,6 +38,7 @@ import Core.DijkstraMap
 import Core.ECS (Entity, Component, HasEntity)
 import qualified Core.ECS as ECS
 import qualified Core.FOV as FOV
+import qualified Core.BPS as Path
 import Core.Monad
 import Core.Types
 
@@ -48,6 +50,7 @@ import qualified Data.IntMap as IMap
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (listToMaybe)
+import Data.Word (Word16)
 
 import qualified Data.Aeson as J
 import qualified Data.Aeson.Encoding as J
@@ -75,6 +78,7 @@ data Level = Level
       -- (hundreds of megabytes) thunk while loading levels.
     , _seen       :: !(UArray (Row, Col) Bool)
     , _solid      :: UArray (Row, Col) Bool
+    , _pathGrid   :: UArray (Row, Col) Word16
     , _player     :: Int
     , _uActor     :: Actor
     , _actors     :: IntMap Actor
@@ -175,6 +179,13 @@ actorChar ref = lens _achar (\v l -> l { _achar = v }) <# aref ref
 -- calculating FOV. Usually the same as 'solid'.
 opacity :: Level :~> UArray (Row, Col) Bool
 opacity = unsafeWeakLens (lens _opacity (\v l -> l { _opacity = v }))
+
+-- | The precomputed path grid
+pathGrid :: Level :~> UArray (Row, Col) Word16
+pathGrid = unsafeWeakLens (lens _pathGrid (\v l -> l { _pathGrid = v })) 
+
+pathfind :: (Row, Col) -> (Row, Col) -> Game k Level (Maybe [(Row, Col)])
+pathfind start dest = fmap (\s -> Path.pathfind s start dest) (access pathGrid)
 
 -- | A Dijkstra map that allows monsters to find the player. Must be
 -- manually updated whenever the player moves.
@@ -288,6 +299,7 @@ defaultLevel = Level
     , _visible    = FOV.shadowCast (1,1) defaultFloor
     , _seen       = FOV.shadowCast (1,1) defaultFloor
     , _solid      = defaultFloor
+    , _pathGrid   = Path.preProcess defaultFloor
     , _uActor     = Actor (1,1) Hidden 'e' Black ECS.empty
     , _player     = 0
     , _actors     = IMap.insert 0 (Actor (1,1) Alive '@' White ECS.empty) IMap.empty

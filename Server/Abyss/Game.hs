@@ -7,6 +7,7 @@ import Abyss.Stats
 import Abyss.Item (Item)
 import qualified Abyss.Item as Item
 import qualified Abyss.Spell as Spell
+import qualified Abyss.Monster as Monster
 import Core.Types
 import Core.Engine
 import Core.Monad
@@ -124,8 +125,10 @@ levelOne :: LevelSpec
 levelOne = LevelSpec
     { generator    = dungeonGen (ritualChamber : hallway : map plainRoom rooms)
     , initializer  = defaultInitializer
-    , monsterCount = 0
-    , monsterTable = []
+    , monsterCount = 40
+    , monsterTable = [ (10, Egg 'Z' White Monster.zombie)
+                     , (10, Egg 'S' White Monster.skeleton)
+                     ]
     , itemCount    = 40
     , itemTable    = [ (10, (Item.longswordP2, 1))
                      , (10, (Item.greenPotion, 1))
@@ -142,6 +145,7 @@ initGame = do
 
     actor player != Name "Player"
     actor player != inventoryList [(Item.longswordP2, 1), (Item.redPotion, 32)]
+    baseHP <# actor player != 50
 
     game
 

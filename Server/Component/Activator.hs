@@ -52,6 +52,7 @@ doorTrans Closed _ self = do
     staticChar self != '-'
     ix self <# solid != False
     ix self <# opacity != False
+    modifyLevel shadowCast
     return Open
 
 doorTrans Open _ self = do

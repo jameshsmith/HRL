@@ -8,7 +8,7 @@ module Core.Types
   , (:~>), unsafeWeakLens, weak, (<#)
   , Dir4 (..)
   , Dir8 (..)
-  , move4, opposite4, manhattan, clock, anticlock
+  , move4, opposite4, manhattan, clock, anticlock, direction
   , (?)
   , ix, ixD
   -- * Functor fixpoints and anamorphisms
@@ -119,6 +119,14 @@ move4 N4 (r, c) = (r - 1, c)
 move4 E4 (r, c) = (r, c + 1)
 move4 S4 (r, c) = (r + 1, c)
 move4 W4 (r, c) = (r, c - 1)
+
+direction :: (Row, Col) -> (Row, Col) -> Maybe Dir4
+direction (r1, c1) (r2, c2)
+  | r1 < r2   = Just S4
+  | r1 > r2   = Just N4
+  | c1 > c2   = Just W4
+  | c1 < c2   = Just E4
+  | otherwise = Nothing
 
 -- | Return the opposite compass facing direction.
 opposite4 :: Dir4 -> Dir4

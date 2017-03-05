@@ -3,7 +3,6 @@ module Gen.Level where
 
 import Prelude hiding ((.), id)
 
-import Abyss.Stats
 import Abyss.Item (Item)
 import qualified Abyss.Item as Item
 import Core.Types
@@ -11,8 +10,8 @@ import Core.Monad
 import Core.Engine
 import Core.DijkstraMap
 import qualified Core.ECS as ECS
+import qualified Core.BPS as Path
 import Component.Activator
-import Component.AI
 import Component.Name
 
 import Control.Arrow (second)
@@ -21,35 +20,6 @@ import Control.Monad.Trans.State
 import Data.Array.Unboxed
 import Data.Maybe (listToMaybe)
 import System.Random
-
-zombie :: ECS.Entity
-zombie =
-  ECS.insert (simpleAI shamble)
-  >>> ECS.insert (Name "Zombie")
-  >>> ECS.modify (setL defense 5)
-  >>> ECS.modify (setL (attribute CON) 7)
-  >>> ECS.modify (setL damage [(Roll 1 d4, Bashing), (Roll 1 (0, 1), Necrotic)])
-  $ ECS.empty
-
-shamble :: ARef -> Game () Level ()
-shamble self = do
-    willMove <- coin
-    when willMove $ do
-        pos <- access (loc <# aref self)
-        moves <- downhill pos <$> access playerDMap
-        d <- pick N4 [E4, S4, W4]
-        monMove pos self (moves ++ [d])
-
-monMove :: (Row, Col) -> ARef -> [Dir4] -> Game () Level ()
-monMove _   _    []     = return ()
-monMove pos self (d:ds) = do
-    occupier <- listToMaybe . living (\a -> a ^. loc == move4 d pos) <$> level
-    blocked  <- access (ix (move4 d pos) <# solid)
-    case occupier of
-        Just mon | mon == player -> self `meleeAttack` mon
-        Just _                   -> monMove pos self ds
-        Nothing  | blocked       -> monMove pos self ds
-        Nothing                  -> loc <# aref self != move4 d pos
 
 data LevelSpec = LevelSpec
     { generator    :: State StdGen (UArray (Row, Col) Char)
@@ -64,6 +34,10 @@ isSolid :: Char -> Bool
 isSolid ' ' = False
 isSolid '*' = False
 isSolid _   = True
+
+isSolidNonDoor :: Char -> Bool
+isSolidNonDoor '+' = False
+isSolidNonDoor c   = isSolid c
 
 defaultInitializer :: Char -> ECS.Entity
 defaultInitializer ' ' = setL ECS.lens (Name "Wall") ECS.empty
@@ -80,6 +54,7 @@ loadLevel spec = do
     opacity != amap isSolid layout
     seen != listArray (bounds layout) (repeat False)
     statics != array (bounds layout) (map (second ((,) <*> initializer spec)) (assocs layout))
+    pathGrid != Path.preProcess (amap isSolidNonDoor layout)
 
     forM_ (assocs layout) $ \(p, c) -> do
         staticChar p != c
@@ -105,10 +80,9 @@ loadLevel spec = do
                 n <- dice d
                 floorItem itemLoc != Just (Item.name item, n)
     
-    forM_ [1..50] $ \_ -> do
+    forM_ [1..(monsterCount spec)] $ \_ -> do
         spawnLoc <- pickNonEmpty monSpots
         occupier <- listToMaybe . living (\a -> a ^. loc == spawnLoc) <$> level
         case occupier of
             Just _  -> return ()
-            Nothing -> do
-                void $ spawn spawnLoc (Egg 'Z' White zombie)
+            Nothing -> void . spawn spawnLoc =<< rollTable (monsterTable spec)

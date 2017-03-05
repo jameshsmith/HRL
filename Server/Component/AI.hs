@@ -2,7 +2,7 @@
 module Component.AI
     ( AI
     , AIModifier (..)
-    , mkAI, simpleAI
+    , mkAI, simpleAI, transAI
     , stepAI, runAI
     ) where
 
@@ -29,6 +29,9 @@ instance ECS.Component AIModifier where
 
 mkAI :: Fix (ReaderT ARef (Game () Level)) -> AI
 mkAI = AI
+
+transAI :: (s -> ARef -> Game () Level s) -> s -> AI
+transAI f start = AI (Ana (\s -> ReaderT (f s)) start)
 
 simpleAI :: (ARef -> Game () Level ()) -> AI
 simpleAI = mkAI . eternal . ReaderT

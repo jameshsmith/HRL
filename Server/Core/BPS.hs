@@ -5,6 +5,7 @@ module Core.BPS
     ( preProcess
     , pathfind
     , astar
+    , fillPath
     , Path (..)
     ) where
 
@@ -204,6 +205,15 @@ hook d w = w `shiftR` (fromEnum d * 2 + 8) .&. 0x3
 
 data Path = Path { distance :: Int, dir :: Dir4, nodes :: [(Row, Col)] } deriving Show
 
+fillPath :: [(Row, Col)] -> [(Row, Col)]
+fillPath (p1@(r1, c1) : p2@(r2, c2) : path)
+  | manhattan p1 p2 == 1 = fillPath (p2 : path)
+  | c1 < c2  = fillPath ((r1, c1 + 1) : p2 : path)
+  | c2 < c1  = fillPath ((r1, c1 - 1) : p2 : path)
+  | r1 < r2  = fillPath ((r1 + 1, c1) : p2 : path)
+  | r2 < r1  = fillPath ((r1 - 1, c1) : p2 : path)
+fillPath path = path
+
 intersect :: Dir4 -> (Row, Col) -> (Row, Col) -> Bool
 intersect d (r1, c1) (r2, c2)
   | d == N4 || d == S4 = r1 == r2
@@ -267,8 +277,8 @@ startHeap solid start dest = Heap.fromList (startEntry <*> walk solid dest start
   where
     startEntry d p = Heap.Entry (manhattan dest p + manhattan start p) (Path (manhattan start p) d [p, start])
 
-pathfind :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Maybe Path
-pathfind solid start dest = runST $ do
+pathfind :: UArray (Row, Col) Word16 -> (Row, Col) -> (Row, Col) -> Maybe [(Row, Col)]
+pathfind solid start dest = fmap (reverse . nodes) $ runST $ do
   visited <- newArray (bounds solid) False
   writeArray visited start True
   pathfind' solid dest visited (startHeap solid start dest)
