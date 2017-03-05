@@ -151,7 +151,7 @@ initGame = do
 
 game :: Game Action Level ()
 game = do
-    (AIMod aiM) <- modified player
+    (AIModifier aiM) <- modified player
     noTurn . aiM . handleAct =<< turn
 
     modifyLevel shadowCast
@@ -169,8 +169,13 @@ game = do
         if (hp - amount) <= 0 || dead monster
             then aref ref %= kill
             else runAI ref
-      
-    game
+
+    (Hurt amount) <- modified player
+    hp <- getL baseHP <$> modified player
+    isDead <- dead <$> access (aref player)
+    if (hp - amount) <= 0 || isDead
+        then aref player %= kill >> return ()
+        else game
 
 handleAct :: Action -> Game () Level ()
 handleAct (Move dir) = bump player dir

@@ -19,13 +19,13 @@ import Data.Typeable
 
 newtype AI = AI (Fix (ReaderT ARef (Game () Level))) deriving (Typeable, Monoid)
 
-newtype AIModifier = AIMod (Game () Level () -> Game () Level ())
+newtype AIModifier = AIModifier (Game () Level () -> Game () Level ())
 
 instance ECS.Component AI where
   stock = mempty
 
 instance ECS.Component AIModifier where
-  stock = AIMod id
+  stock = AIModifier id
 
 mkAI :: Fix (ReaderT ARef (Game () Level)) -> AI
 mkAI = AI
@@ -42,5 +42,5 @@ stepAI self (AI f) = AI <$> runReaderT (step f) self
 runAI :: ARef -> Game k Level ()
 runAI ref = noTurn $ do
     isAlive <- alive <$> access (aref ref)
-    (AIMod aiM) <- modified ref
+    (AIModifier aiM) <- modified ref
     when isAlive . aiM $ actor ref #= stepAI ref

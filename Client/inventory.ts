@@ -216,6 +216,7 @@ export class Inventory extends Frame {
             }
         }
         console.log("Changes made to inventory: " + changes)
+        console.log(this.items.length)
     }
 
     // FIXME: This doesn't currently sort, it just restacks,

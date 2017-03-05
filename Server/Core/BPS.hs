@@ -26,14 +26,6 @@ import qualified Data.Set as Set
 import Data.Heap (Heap, Entry)
 import qualified Data.Heap as Heap
 
--- Some ideas for improvements:
---
--- 1: Can we mark nodes we just walk over as visited? Might help in
--- some pathological cases?
-
--- 2: Try replacing storing the path in the Heap with a mutable
--- copy of the UArray in the ST monad
-
 dirBit :: Dir4 -> Word16
 dirBit N4 = bit 0
 dirBit E4 = bit 2

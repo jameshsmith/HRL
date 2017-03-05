@@ -44,7 +44,7 @@ rotate :: Dir8 -> (Row, Col) -> (Row, Col)
 rotate N8  (x, y) = (-x, y)
 rotate NE8 (x, y) = (-y, x)
 rotate E8  (x, y) = (y, x)
-rotate SE8 pos   = pos
+rotate SE8 pos    = pos
 rotate S8  (x, y) = (x, -y)
 rotate SW8 (x, y) = (y, -x)
 rotate W8  (x, y) = (-y, -x)

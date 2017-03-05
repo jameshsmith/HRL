@@ -87,7 +87,8 @@ luckCurse = Spell "Curse of Misfortune" . Actor $ \aref ->
 
 luckCurse' :: ARef -> Maybe (Int, MRef) -> MaybeT (Game k Level) (Maybe (Int, MRef))
 luckCurse' ref s
-  | Nothing     <- s = Just . ((,) 9) <$> lift (addModifier (\(AIMod f) -> AIMod (rollMin . f)) ref)
+  | Nothing     <- s =
+      Just . ((,) 9) <$> lift (addModifier (\(AIModifier f) -> AIModifier (rollMin . f)) ref)
   | Just (n, m) <- s
   , n == 0           = lift (removeModifier m) >> mzero
   | Just (n, m) <- s = return (Just (n - 1, m))

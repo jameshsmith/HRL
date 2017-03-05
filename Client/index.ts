@@ -50,7 +50,7 @@ interface Message {
 function updateMessage(message: Message): void {
     if (message.type === "level") {
         let payload = <LevelUpdate>message.payload
-        console.log(payload)
+        //console.log(payload)
         level.update(payload)
         inventory.update(payload.inventory)
     } else if (message.type === "loading") {

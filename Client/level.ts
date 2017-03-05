@@ -456,18 +456,22 @@ export class Level {
             }
         }
 
-        // Update the message log
-        for (let i = message.messages.length - 1; i >= 0; i--) {
-            let pNode = document.createElement("p")
-            let textNode = document.createTextNode(message.messages[i])
-            pNode.appendChild(textNode)
-            document.getElementById("messages").appendChild(pNode)
-        }
+        // Memory leak!
 
-        if (message.messages.length > 0) {
-            let messagesNode = document.getElementById("messages")
-            messagesNode.scrollTop = messagesNode.scrollHeight  
-        }       
+        // Update the message log
+        //for (let i = message.messages.length - 1; i >= 0; i--) {
+        //    let pNode = document.createElement("p")
+        //    let textNode = document.createTextNode(message.messages[i])
+        //    pNode.appendChild(textNode)
+        //    document.getElementById("messages").appendChild(pNode)
+        //}
+
+        //if (message.messages.length > 0) {
+        //    let messagesNode = document.getElementById("messages")
+        //    messagesNode.scrollTop = messagesNode.scrollHeight  
+        //}
+
+        console.log(this.group.children.length)
     }
 
     public clearItem(r, c) {
