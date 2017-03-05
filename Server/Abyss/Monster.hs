@@ -32,6 +32,7 @@ monMove pos self (d:ds) = do
         Nothing  | blocked         -> monMove pos self ds
         Nothing                    -> loc <# aref self != move4 d pos
 
+approachPlayer :: (Row, Col) -> ARef -> Game () Level ()
 approachPlayer pos self = do
     moves <- downhill pos <$> access playerDMap
     d <- pick N4 [E4, S4, W4]
@@ -53,9 +54,7 @@ shamble self = do
     willMove <- coin
     when willMove $ do
         pos <- access (loc <# aref self)
-        moves <- downhill pos <$> access playerDMap
-        d <- pick N4 [E4, S4, W4]
-        monMove pos self (moves ++ [d])
+        approachPlayer pos self
 
 skeleton :: ECS.Entity
 skeleton =
